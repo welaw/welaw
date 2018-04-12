@@ -1,0 +1,27 @@
+version: '3'
+services:
+    db:
+        image: postgres:latest
+        environment:
+            #LC_ALL: C.UTF-8
+            POSTGRES_USER: 'postgres'
+            POSTGRES_PASSWORD: ''
+            POSTGRES_DB: 'welaw'
+
+    welaw:
+        build: .
+        #command: 
+        volumes:
+            - .:/go/src/github.com/welaw/welaw
+        ports:
+            - '8080:8080'
+        depends_on:
+            - 'db'
+        links:
+            - db
+        environment:
+            DEBUG: 'true'
+            PRODUCTION: '1'
+            #PORT: '8080'
+        #env_file: 
+          #- docker.env

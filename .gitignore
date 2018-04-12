@@ -1,0 +1,11 @@
+# mac
+.DS_Store
+
+# environments
+*.env
+
+# dev
+.repos/
+
+# gcloud
+app.yaml

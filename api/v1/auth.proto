@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package grpc.welaw.v1;
+
+message UserRole {
+    string name = 1;
+}
+
+message LoginRequest {}
+
+message LoginReply {
+    string state = 1;
+    string url = 2;
+    string err = 3;
+}
+
+message LoginUserRequest {
+    string state = 1;
+    string code = 2;
+}
+
+message LoginUserReply {
+     Authorization authorization = 1;
+     string err = 2;
+}
+
+message MakeTokenRequest {
+    string uid = 1;
+}
+
+message MakeTokenReply {
+    string token = 1;
+    string url = 2;
+    string err = 3;
+}
+
+message Authorization {
+    string uid = 1;
+    string username = 2;
+    string email = 3;
+    string full_name = 4;
+    string picture_url = 8;
+    string provider_id = 9;
+    string name = 10;
+}
+
+message LoginAsRequest {
+   Authorization authorization = 1; 
+}
+
+message LoginAsReply {
+    string err = 1;
+}
+
+message LogoutRequest {
+}
+
+message LogoutReply {
+    string err = 1;
+}

@@ -1,0 +1,42 @@
+language:
+    go
+
+go:
+    - 1.x
+    - master
+
+install:
+    - sudo apt-get purge cmake
+    - sudo apt-get install cmake -y
+    - sudo make install-libgit2
+    - make install-test-deps
+    - sudo -E env "PATH=$PATH" make install-migrate
+
+env:
+    - DB_NAME=welaw_test
+      DB_HOST=localhost
+      DB_PORT=5432
+      DB_USERNAME=postgres
+      DB_SSL_MODE=disable
+      POSTGRES_CONNECTION="user=postgres dbname=welaw_test host=localhost sslmode=disable"
+      REPOS_DIR=".repos"
+      STATIC_DIR="https://storage.googleapis.com/welaw-static"
+
+before_script:
+    - make reset-db
+
+script:
+    go test -v ./...
+
+services:
+    - postgresql
+
+addons:
+    postgresql: "9.4"
+
+notifications:
+    email:
+        on_success:
+            false
+        on_failure:
+            false

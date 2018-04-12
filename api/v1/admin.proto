@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package grpc.welaw.v1;
+
+message ServerStats {
+    string upstreams = 1;
+    string users = 2;
+    string laws = 3;
+    string branches = 4;
+    string versions = 5;
+    string votes = 6;
+}
+
+message LoadReposOptions {
+}
+
+message LoadReposReply {
+}
+
+message SaveReposOptions {
+    enum RequestType {
+        SAVE = 0;
+        LOAD = 1;
+    }
+    RequestType req_type = 1;
+}
+
+message SaveReposReply {
+}

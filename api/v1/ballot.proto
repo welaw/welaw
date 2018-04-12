@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "api/v1/law.proto";
+import "api/v1/user.proto";
+
+package grpc.welaw.v1;
+
+enum VoteValue {
+    YES = 0;
+    NO = 1;
+    PRESENT = 2;
+    NOT_PRESENT = 3;
+}
+
+message Vote {
+    string uid = 1;
+    string law_id = 2;
+    string user_id = 3;
+    string vote = 4;
+    string comment = 5;
+    string username = 6;
+    string upstream = 7;
+    string ident = 8;
+    string branch = 9;
+    string label = 10;
+    google.protobuf.Timestamp cast_at = 11;
+    uint32 version = 12;
+    string version_id = 13;
+    string picture_url = 14;
+    string law_title = 15;
+    LawSet law = 16;
+    User user = 17;
+}
+
+message VoteSummary {
+    int32 yays = 1;
+    int32 nays = 2;
+    int32 present = 3;
+    int32 not_present = 4;
+    int32 upstream_yays = 5;
+    int32 upstream_nays = 6;
+    int32 upstream_present = 7;
+    int32 upstream_not_present = 8;
+}
+
+message CreateVotesOptions {
+    VoteResult vote_result = 1;
+}
+
+message VoteResult {
+    string upstream_group = 1;
+    string result = 2;
+    google.protobuf.Timestamp published_at = 3;
+    string upstream = 4;
+    string ident = 5;
+}
+
+message CreateVoteOptions {
+    string username = 1;
+    string branch = 2;
+    string version = 3;
+}
+
+message CreateVoteRequest {
+    Vote vote = 1;
+    CreateVoteOptions opts = 2;
+}
+
+message CreateVoteReply {
+    Vote vote = 1;
+    string err = 2;
+}
+
+message DeleteVoteOptions {
+    string username = 1;
+    string branch = 2;
+    string version = 3;
+}
+
+message DeleteVoteRequest {
+    string upstream = 1;
+    string ident = 2;
+    DeleteVoteOptions opts = 3;
+}
+
+message DeleteVoteReply {
+    string err = 1;
+}
+
+message GetVoteOptions {
+    enum RequestType {
+        BY_USER_VERSION = 0;
+    }
+    RequestType req_type = 1;
+    string upstream = 2;
+    string ident = 3;
+    string username = 4;
+    string branch = 5;
+    string version = 6;
+    bool quiet = 7;
+}
+
+message GetVoteRequest {
+    GetVoteOptions opts = 1;
+}
+
+message GetVoteReply {
+    Vote vote = 1;
+    string err = 2;
+}
+
+message ListVotesOptions {
+    string category = 1;
+    string upstream = 2;
+    string ident = 3;
+    string branch = 4;
+    uint32 version =5;
+    string username = 6;
+    uint32 page_size = 7;
+    uint32 page_num = 8;
+}
+
+message ListVotesRequest {
+    ListVotesOptions opts = 1;
+}
+
+message ListVotesReply {
+    repeated Vote votes = 1;
+    int32 total = 2;
+    string err = 3;
+}
+
+message UpdateVoteOptions {
+    string username = 1;
+    string branch = 2;
+    string version = 3;
+}
+
+message UpdateVoteRequest {
+    Vote vote = 1;
+    UpdateVoteOptions opts = 2;
+}
+
+message UpdateVoteReply {
+    Vote vote = 1;
+    string err = 2;
+}

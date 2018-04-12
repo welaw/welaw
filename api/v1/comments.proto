@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+import "api/v1/user.proto";
+
+package grpc.welaw.v1;
+
+message Comment {
+    string comment = 1;
+    string username = 2;
+    string user_id = 3;
+    int32 annotation_count = 4;
+    repeated Annotation annotations = 5;
+    string upstream = 6;
+    string ident = 7;
+    string branch = 8;
+    uint32 version = 9;
+    string uid = 10;
+    bool disabled = 11;
+    User user = 12;
+    int32 likes = 13;
+    bool liked = 14;
+}
+
+message ListCommentsOptions {
+    enum RequestType {
+        BY_USERNAME = 0;
+        BY_VERSION = 1;
+    }
+    RequestType req_type = 1;
+    string upstream = 2;
+    string ident = 3;
+    string branch = 4;
+    int32 version = 5;
+    string filter = 6;
+    int32 page_size = 7;
+    int32 page_num = 8;
+    bool desc = 9;
+    string username = 10;
+    string order_by = 11;
+}
+
+message DeleteCommentOptions {
+}
+
+message UpdateCommentOptions {
+}
+
+message Annotation {
+	string quote = 1;
+	repeated AnnotationRange ranges = 2;
+	string text = 3;
+    string upstream = 4;
+    string ident = 5;
+    string branch = 6;
+    string version = 7;
+    string id = 8;
+    string comment_id = 9;
+}
+
+message AnnotationRange {
+	string start = 1;
+	int32 startOffset = 2;
+	string end = 3;
+	int32 endOffset = 4;
+}
+
+message ListAnnotationsOptions {
+    enum RequestType {
+        BY_USERNAME = 0;
+        BY_UID = 1;
+        BY_COMMENT = 2;
+    }
+    RequestType req_type = 1;
+    string username = 2;
+    string uid = 3;
+    string comment_id = 4;
+}
+
+message GetCommentOptions {
+    enum RequestType {
+        BY_USER_VERSION = 0;
+        BY_UID = 1;
+    }
+    RequestType req_type = 1;
+    string uid = 2;
+    string upstream = 3;
+    string ident = 4;
+    string branch = 5;
+    int32 version = 6;
+    string username = 7;
+    bool quiet = 8;
+}
+
+message LikeCommentOptions {
+    string comment_id = 1;
+    string username = 2;
+}

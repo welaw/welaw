@@ -1,0 +1,4 @@
+package database
+
+func SeedTestDatabase() {
+}

@@ -1,0 +1,131 @@
+syntax = "proto3";
+
+package grpc.welaw.v1;
+
+message User {
+    string key = 1;
+    string uid = 2;
+    string username = 3;
+    string email = 4;
+    string full_name = 5;
+    string biography = 6;
+    string upstream = 7;
+    string upstream_body = 8;
+    string picture_url = 9;
+    string provider_id = 10;
+    string name = 11;
+    string upstream_id = 12;
+    bool email_private = 13;
+    repeated string roles = 14;
+    string deleted_at = 15;
+    string provider = 17;
+    int32 vote_count = 18;
+    int32 law_count = 19;
+    bool has_password = 20;
+    bool full_name_private = 21;
+    string last_login = 22;
+}
+
+message UserMetadata {
+    string office_email = 1;
+    string office_phone = 2;
+    string office_addr = 3;
+    string state = 4;
+    string website_url = 5;
+    string rank = 6;
+    int32 influence = 7;
+}
+
+message GetUserOptions {
+    enum RequestType {
+        BY_USERNAME = 0;
+        BY_UID = 1;
+        BY_CONTEXT = 2;
+    }
+    RequestType req_type = 1;
+    string username = 2;
+    string uid = 3;
+    string email = 4;
+    bool quiet = 5;
+}
+
+message GetUserRequest {
+    GetUserOptions opts = 1;
+}
+
+message GetUserReply {
+    User user = 1;
+    bool owner = 3;
+    bool admin = 4;
+    string err = 5;
+}
+
+message CreateUserRequest {
+    User user = 1;
+}
+
+message CreateUserReply {
+    User user = 1;
+    string err = 2;
+}
+
+message ListUsersOptions {
+    /*string type = 1;*/
+    string upstream = 2;
+    bool all = 3;
+    int32 limit = 4;
+    int32 page_size = 5;
+    int32 page_num = 6;
+    string search = 7;
+    enum RequestType {
+        BY_UPSTREAM = 0;
+        ALL = 1;
+    }
+    RequestType req_type = 8;
+}
+
+message ListUsersRequest {
+    ListUsersOptions opts = 1;
+}
+
+message ListUsersReply {
+    repeated User users = 1;
+    string err = 2;
+}
+
+message RegisterUserRequest {
+    string uid = 1;
+    string username = 2;
+}
+
+message RegisterUserReply {
+    string err = 1;
+}
+
+message UpdateUserOptions {
+    /*enum RequestType {*/
+        /*}*/
+    string username = 1;
+    string email = 2;
+    bool email_private = 3;
+    string biography = 4;
+    string full_name = 6;
+    string picture_url = 7;
+    string password = 8;
+    bool full_name_private = 9;
+}
+
+message UpdateUserRequest {
+    User user = 1;
+    UpdateUserOptions opts = 2;
+}
+
+message UpdateUserReply {
+    string err = 1;
+}
+
+message UploadAvatarOptions {
+    bytes image = 1;
+    string filename = 2;
+    string username = 3;
+}

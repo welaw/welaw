@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+import "api/v1/law.proto";
+import "api/v1/user.proto";
+
+package grpc.welaw.v1;
+
+message Upstream {
+    string ident = 1;
+    string upstream_name = 2;
+    string upstream_description = 3;
+	string name = 4;
+    string description = 5;
+	string url = 6;
+	string email = 7;
+    string default_user = 8;
+    string geo_coords = 9;
+    repeated LawTag tags = 10;
+    int32 laws = 11;
+    int32 users = 12;
+    UpstreamMetadata metadata = 13;
+    string uid = 14;
+}
+
+message UpstreamMetadata {
+    string email = 1;
+    string wikipedia = 2;
+    string twitter = 3;
+    string api_url = 4;
+    string facebook = 5;
+}
+
+message CreateUpstreamRequest {
+    Upstream upstream = 1;
+}
+
+message CreateUpstreamReply {
+    string err = 1;
+}
+
+message GetUpstreamRequest {
+    string ident = 1;
+}
+
+message GetUpstreamReply {
+    Upstream upstream = 1;
+    repeated LawSet laws = 2;
+    repeated User users = 3;
+    string err = 4;
+}
+
+message ListUpstreamsRequest {}
+
+message ListUpstreamsReply {
+    repeated Upstream upstreams = 1;
+    string err = 2;
+}
+
+message UpdateUpstreamRequest {
+    Upstream upstream = 1;
+}
+
+message UpdateUpstreamReply {
+    string err = 1;
+}

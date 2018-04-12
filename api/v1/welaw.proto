@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+import "api/v1/auth.proto";
+import "api/v1/ballot.proto";
+import "api/v1/law.proto";
+import "api/v1/user.proto";
+import "api/v1/upstream.proto";
+
+package grpc.welaw.v1;
+/*option go_package = "welawv1";*/
+
+service WelawSvc {
+    // Auth
+    rpc Login(LoginRequest) returns (LoginReply) {}
+    rpc LoginUser(LoginUserRequest) returns (LoginUserReply) {}
+    rpc MakeToken(MakeTokenRequest) returns (MakeTokenReply) {}
+    rpc LoginAs(LoginAsRequest) returns (LoginAsReply) {}
+    rpc Logout(LogoutRequest) returns (LogoutReply) {}
+    // Ballot
+    rpc CreateVote(CreateVoteRequest) returns (CreateVoteReply) {}
+    rpc UpdateVote(UpdateVoteRequest) returns (UpdateVoteReply) {}
+    rpc GetVote(GetVoteRequest) returns (GetVoteReply) {}
+    rpc DeleteVote(DeleteVoteRequest) returns (DeleteVoteReply) {}
+    rpc ListVotes(ListVotesRequest) returns (ListVotesReply) {}
+    // Law
+    rpc CreateLaw(CreateLawRequest) returns (CreateLawReply) {}
+    /*rpc ListLawBranches(ListLawBranchesRequest) returns (ListLawBranchesReply) {}*/
+    /*rpc ListVersions(ListVersionsRequest) returns (ListVersionsReply) {}*/
+    rpc GetLaw(GetLawRequest) returns (GetLawReply) {}
+    rpc ListLaws(ListLawsRequest) returns (ListLawsReply) {}
+    /*rpc CreateVersion(CreateVersionRequest) returns (CreateVersionReply) {}*/
+    /*rpc CreateLawVersion(CreateLawVersionRequest) returns (CreateLawVersionReply) {}*/
+    /*rpc DiffLaw(DiffLawRequest) returns (DiffLawReply) {}*/
+    /*rpc DiffBranch(DiffLawRequest) returns (DiffLawReply) {}*/
+    // Upstream
+    rpc CreateUpstream(CreateUpstreamRequest) returns (CreateUpstreamReply) {}
+    rpc GetUpstream(GetUpstreamRequest) returns (GetUpstreamReply) {}
+    rpc ListUpstreams(ListUpstreamsRequest) returns (ListUpstreamsReply) {}
+    rpc UpdateUpstream(UpdateUpstreamRequest) returns (UpdateUpstreamReply) {}
+    // User
+    rpc CreateUser(CreateUserRequest) returns (CreateUserReply) {}
+    rpc GetUser(GetUserRequest) returns (GetUserReply) {}
+    rpc ListUsers(ListUsersRequest) returns (ListUsersReply) {}
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserReply) {}
+}

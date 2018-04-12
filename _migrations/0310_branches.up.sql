@@ -1,0 +1,9 @@
+CREATE TABLE branches (
+  uid           UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  law_id        UUID NOT NULL,
+  user_id       UUID NOT NULL,
+  name          varchar(255) NOT NULL,
+  created_at    TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at    TIMESTAMP WITHOUT TIME ZONE
+);
