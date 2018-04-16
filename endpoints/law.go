@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 	"github.com/welaw/welaw/services"
 )
 
-func (e Endpoints) CreateAnnotation(ctx context.Context, ann *apiv1.Annotation) (string, error) {
-	req := apiv1.Annotation{}
+func (e Endpoints) CreateAnnotation(ctx context.Context, ann *proto.Annotation) (string, error) {
+	req := proto.Annotation{}
 	resp, err := e.CreateAnnotationEndpoint(ctx, req)
 	if err != nil {
 		return "", err
@@ -28,7 +28,7 @@ func (e Endpoints) DeleteAnnotation(ctx context.Context, id string) error {
 	return r.Err
 }
 
-func (e Endpoints) ListAnnotations(ctx context.Context, opts *apiv1.ListAnnotationsOptions) ([]*apiv1.Annotation, int, error) {
+func (e Endpoints) ListAnnotations(ctx context.Context, opts *proto.ListAnnotationsOptions) ([]*proto.Annotation, int, error) {
 	req := ListAnnotationsRequest{}
 	resp, err := e.ListAnnotationsEndpoint(ctx, req)
 	if err != nil {
@@ -51,7 +51,7 @@ func (e Endpoints) DeleteComment(ctx context.Context, uid string) error {
 	return r.Err
 }
 
-func (e Endpoints) GetComment(ctx context.Context, opts *apiv1.GetCommentOptions) (*apiv1.Comment, error) {
+func (e Endpoints) GetComment(ctx context.Context, opts *proto.GetCommentOptions) (*proto.Comment, error) {
 	req := GetCommentRequest{Opts: opts}
 	resp, err := e.GetCommentEndpoint(ctx, req)
 	if err != nil {
@@ -64,7 +64,7 @@ func (e Endpoints) GetComment(ctx context.Context, opts *apiv1.GetCommentOptions
 	return r.Comment, nil
 }
 
-func (e Endpoints) ListComments(ctx context.Context, opts *apiv1.ListCommentsOptions) ([]*apiv1.Comment, int, error) {
+func (e Endpoints) ListComments(ctx context.Context, opts *proto.ListCommentsOptions) ([]*proto.Comment, int, error) {
 	req := ListCommentsRequest{}
 	resp, err := e.ListCommentsEndpoint(ctx, req)
 	if err != nil {
@@ -77,7 +77,7 @@ func (e Endpoints) ListComments(ctx context.Context, opts *apiv1.ListCommentsOpt
 	return r.Rows, r.Total, nil
 }
 
-func (e Endpoints) CreateComment(ctx context.Context, comment *apiv1.Comment) (*apiv1.Comment, error) {
+func (e Endpoints) CreateComment(ctx context.Context, comment *proto.Comment) (*proto.Comment, error) {
 	req := CreateCommentRequest{Comment: comment}
 	resp, err := e.CreateCommentEndpoint(ctx, req)
 	if err != nil {
@@ -90,7 +90,7 @@ func (e Endpoints) CreateComment(ctx context.Context, comment *apiv1.Comment) (*
 	return r.Comment, nil
 }
 
-func (e Endpoints) UpdateComment(ctx context.Context, comment *apiv1.Comment) (*apiv1.Comment, error) {
+func (e Endpoints) UpdateComment(ctx context.Context, comment *proto.Comment) (*proto.Comment, error) {
 	req := UpdateCommentRequest{Comment: comment}
 	resp, err := e.UpdateCommentEndpoint(ctx, req)
 	if err != nil {
@@ -103,7 +103,7 @@ func (e Endpoints) UpdateComment(ctx context.Context, comment *apiv1.Comment) (*
 	return r.Comment, nil
 }
 
-func (e Endpoints) LikeComment(ctx context.Context, opts *apiv1.LikeCommentOptions) error {
+func (e Endpoints) LikeComment(ctx context.Context, opts *proto.LikeCommentOptions) error {
 	req := LikeCommentRequest{Opts: opts}
 	resp, err := e.LikeCommentEndpoint(ctx, req)
 	if err != nil {
@@ -113,19 +113,19 @@ func (e Endpoints) LikeComment(ctx context.Context, opts *apiv1.LikeCommentOptio
 	return r.Err
 }
 
-func (e Endpoints) CreateLaw(ctx context.Context, set *apiv1.LawSet, opts *apiv1.CreateLawOptions) (*apiv1.CreateLawReply, error) {
+func (e Endpoints) CreateLaw(ctx context.Context, set *proto.LawSet, opts *proto.CreateLawOptions) (*proto.CreateLawReply, error) {
 	req := CreateLawRequest{LawSet: set, Opts: opts}
 	resp, err := e.CreateLawEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	r := resp.(CreateLawResponse)
-	return &apiv1.CreateLawReply{
+	return &proto.CreateLawReply{
 		LawSet: r.LawSet,
 	}, r.Err
 }
 
-func (e Endpoints) CreateLaws(ctx context.Context, sets []*apiv1.LawSet, opts *apiv1.CreateLawsOptions) ([]*apiv1.LawSet, error) {
+func (e Endpoints) CreateLaws(ctx context.Context, sets []*proto.LawSet, opts *proto.CreateLawsOptions) ([]*proto.LawSet, error) {
 	req := CreateLawsRequest{Laws: sets, Opts: opts}
 	resp, err := e.CreateLawsEndpoint(ctx, req)
 	if err != nil {
@@ -135,7 +135,7 @@ func (e Endpoints) CreateLaws(ctx context.Context, sets []*apiv1.LawSet, opts *a
 	return r.Laws, r.Err
 }
 
-func (e Endpoints) DeleteLaw(ctx context.Context, upstream, ident string, opts *apiv1.DeleteLawOptions) error {
+func (e Endpoints) DeleteLaw(ctx context.Context, upstream, ident string, opts *proto.DeleteLawOptions) error {
 	req := DeleteLawRequest{
 		Upstream: upstream,
 		Ident:    ident,
@@ -149,7 +149,7 @@ func (e Endpoints) DeleteLaw(ctx context.Context, upstream, ident string, opts *
 	return r.Err
 }
 
-func (e Endpoints) DiffLaws(ctx context.Context, upstream, ident string, opts *apiv1.DiffLawsOptions) (*apiv1.DiffLawsReply, error) {
+func (e Endpoints) DiffLaws(ctx context.Context, upstream, ident string, opts *proto.DiffLawsOptions) (*proto.DiffLawsReply, error) {
 	req := DiffLawsRequest{
 		Upstream: upstream,
 		Ident:    ident,
@@ -160,13 +160,13 @@ func (e Endpoints) DiffLaws(ctx context.Context, upstream, ident string, opts *a
 		return nil, err
 	}
 	r := resp.(DiffLawsResponse)
-	return &apiv1.DiffLawsReply{
+	return &proto.DiffLawsReply{
 		Diff:   r.Diff,
 		Theirs: r.Theirs,
 	}, r.Err
 }
 
-func (e Endpoints) GetLaw(ctx context.Context, upstream, ident string, opts *apiv1.GetLawOptions) (*apiv1.GetLawReply, error) {
+func (e Endpoints) GetLaw(ctx context.Context, upstream, ident string, opts *proto.GetLawOptions) (*proto.GetLawReply, error) {
 	req := GetLawRequest{
 		Upstream: upstream,
 		Ident:    ident,
@@ -177,22 +177,22 @@ func (e Endpoints) GetLaw(ctx context.Context, upstream, ident string, opts *api
 		return nil, err
 	}
 	r := resp.(GetLawResponse)
-	return &apiv1.GetLawReply{
+	return &proto.GetLawReply{
 		LawSet: r.LawSet,
 	}, r.Err
 }
 
-func (e Endpoints) ListLaws(ctx context.Context, opts *apiv1.ListLawsOptions) (*apiv1.ListLawsReply, error) {
+func (e Endpoints) ListLaws(ctx context.Context, opts *proto.ListLawsOptions) (*proto.ListLawsReply, error) {
 	req := ListLawsRequest{Opts: opts}
 	resp, err := e.ListLawsEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	r := resp.(ListLawsResponse)
-	return &apiv1.ListLawsReply{LawSets: r.Laws, Total: int32(r.Total)}, r.Err
+	return &proto.ListLawsReply{LawSets: r.Laws, Total: int32(r.Total)}, r.Err
 }
 
-func (e Endpoints) UpdateLaw(ctx context.Context, set *apiv1.LawSet, opts *apiv1.UpdateLawOptions) error {
+func (e Endpoints) UpdateLaw(ctx context.Context, set *proto.LawSet, opts *proto.UpdateLawOptions) error {
 	req := UpdateLawRequest{Law: set, Opts: opts}
 	resp, err := e.UpdateLawEndpoint(ctx, req)
 	if err != nil {
@@ -204,7 +204,7 @@ func (e Endpoints) UpdateLaw(ctx context.Context, set *apiv1.LawSet, opts *apiv1
 
 func MakeCreateAnnotationEndpoint(svc services.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(apiv1.Annotation)
+		req := request.(proto.Annotation)
 		id, err := svc.CreateAnnotation(ctx, &req)
 		return CreateAnnotationResponse{Id: id, Err: err}, nil
 	}
@@ -381,11 +381,11 @@ type DeleteAnnotationResponse struct {
 func (r DeleteAnnotationResponse) Failed() error { return r.Err }
 
 type ListAnnotationsRequest struct {
-	Opts *apiv1.ListAnnotationsOptions `json:"opts"`
+	Opts *proto.ListAnnotationsOptions `json:"opts"`
 }
 
 type ListAnnotationsResponse struct {
-	Rows  []*apiv1.Annotation `json:"rows"`
+	Rows  []*proto.Annotation `json:"rows"`
 	Total int                 `json:"total"`
 	Err   error               `json:"-"`
 }
@@ -393,22 +393,22 @@ type ListAnnotationsResponse struct {
 func (r ListAnnotationsResponse) Failed() error { return r.Err }
 
 type GetCommentRequest struct {
-	Opts *apiv1.GetCommentOptions `json:"opts"`
+	Opts *proto.GetCommentOptions `json:"opts"`
 }
 
 type GetCommentResponse struct {
-	Comment *apiv1.Comment `json:"comment"`
+	Comment *proto.Comment `json:"comment"`
 	Err     error          `json:"-"`
 }
 
 func (r GetCommentResponse) Failed() error { return r.Err }
 
 type ListCommentsRequest struct {
-	Opts *apiv1.ListCommentsOptions `json:"opts"`
+	Opts *proto.ListCommentsOptions `json:"opts"`
 }
 
 type ListCommentsResponse struct {
-	Rows  []*apiv1.Comment `json:"rows"`
+	Rows  []*proto.Comment `json:"rows"`
 	Total int              `json:"total"`
 	Err   error            `json:"-"`
 }
@@ -426,18 +426,18 @@ type DeleteCommentResponse struct {
 func (r DeleteCommentResponse) Failed() error { return r.Err }
 
 type UpdateCommentRequest struct {
-	Comment *apiv1.Comment `json:"comment"`
+	Comment *proto.Comment `json:"comment"`
 }
 
 type UpdateCommentResponse struct {
-	Comment *apiv1.Comment `json:"comment"`
+	Comment *proto.Comment `json:"comment"`
 	Err     error          `json:"-"`
 }
 
 func (r UpdateCommentResponse) Failed() error { return r.Err }
 
 type LikeCommentRequest struct {
-	Opts *apiv1.LikeCommentOptions `json:"opts"`
+	Opts *proto.LikeCommentOptions `json:"opts"`
 }
 
 type LikeCommentResponse struct {
@@ -447,35 +447,35 @@ type LikeCommentResponse struct {
 func (r LikeCommentResponse) Failed() error { return r.Err }
 
 type CreateCommentRequest struct {
-	Comment *apiv1.Comment `json:"comment"`
+	Comment *proto.Comment `json:"comment"`
 }
 
 type CreateCommentResponse struct {
-	Comment *apiv1.Comment `json:"comment"`
+	Comment *proto.Comment `json:"comment"`
 	Err     error          `json:"-"`
 }
 
 func (r CreateCommentResponse) Failed() error { return r.Err }
 
 type CreateLawRequest struct {
-	LawSet *apiv1.LawSet           `json:"law_set"`
-	Opts   *apiv1.CreateLawOptions `json:"opts"`
+	LawSet *proto.LawSet           `json:"law_set"`
+	Opts   *proto.CreateLawOptions `json:"opts"`
 }
 
 type CreateLawResponse struct {
-	LawSet *apiv1.LawSet `json:"law_set"`
+	LawSet *proto.LawSet `json:"law_set"`
 	Err    error         `json:"-"`
 }
 
 func (r CreateLawResponse) Failed() error { return r.Err }
 
 type CreateLawsRequest struct {
-	Laws []*apiv1.LawSet          `json:"laws"`
-	Opts *apiv1.CreateLawsOptions `json:"opts"`
+	Laws []*proto.LawSet          `json:"laws"`
+	Opts *proto.CreateLawsOptions `json:"opts"`
 }
 
 type CreateLawsResponse struct {
-	Laws []*apiv1.LawSet `json:"laws"`
+	Laws []*proto.LawSet `json:"laws"`
 	Err  error           `json:"-"`
 }
 
@@ -484,7 +484,7 @@ func (r CreateLawsResponse) Failed() error { return r.Err }
 type DeleteLawRequest struct {
 	Upstream string                  `json:"upstream"`
 	Ident    string                  `json:"ident"`
-	Opts     *apiv1.DeleteLawOptions `json:"opts"`
+	Opts     *proto.DeleteLawOptions `json:"opts"`
 }
 
 type DeleteLawResponse struct {
@@ -496,12 +496,12 @@ func (r DeleteLawResponse) Failed() error { return r.Err }
 type DiffLawsRequest struct {
 	Upstream string                 `json:"upstream"`
 	Ident    string                 `json:"ident"`
-	Opts     *apiv1.DiffLawsOptions `json:"opts"`
+	Opts     *proto.DiffLawsOptions `json:"opts"`
 }
 
 type DiffLawsResponse struct {
 	Diff   string        `json:"diff"`
-	Theirs *apiv1.LawSet `json:"theirs"`
+	Theirs *proto.LawSet `json:"theirs"`
 	Err    error         `json:"-"`
 }
 
@@ -510,22 +510,22 @@ func (r DiffLawsResponse) Failed() error { return r.Err }
 type GetLawRequest struct {
 	Upstream string               `json:"upstream"`
 	Ident    string               `json:"ident"`
-	Opts     *apiv1.GetLawOptions `json:"opts"`
+	Opts     *proto.GetLawOptions `json:"opts"`
 }
 
 type GetLawResponse struct {
-	LawSet *apiv1.LawSet `json:"law_set"`
+	LawSet *proto.LawSet `json:"law_set"`
 	Err    error         `json:"-"`
 }
 
 func (r GetLawResponse) Failed() error { return r.Err }
 
 type ListLawsRequest struct {
-	Opts *apiv1.ListLawsOptions `json:"opts"`
+	Opts *proto.ListLawsOptions `json:"opts"`
 }
 
 type ListLawsResponse struct {
-	Laws  []*apiv1.LawSet `json:"laws"`
+	Laws  []*proto.LawSet `json:"laws"`
 	Total int             `json:"total"`
 	Err   error           `json:"-"`
 }
@@ -533,8 +533,8 @@ type ListLawsResponse struct {
 func (r ListLawsResponse) Failed() error { return r.Err }
 
 type UpdateLawRequest struct {
-	Law  *apiv1.LawSet           `json:"law"`
-	Opts *apiv1.UpdateLawOptions `json:"opts"`
+	Law  *proto.LawSet           `json:"law"`
+	Opts *proto.UpdateLawOptions `json:"opts"`
 }
 
 type UpdateLawResponse struct {

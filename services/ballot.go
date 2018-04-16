@@ -5,12 +5,12 @@ import (
 	"strconv"
 	"strings"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
 	"github.com/welaw/welaw/pkg/permissions"
+	"github.com/welaw/welaw/proto"
 )
 
-func (svc service) CreateVote(ctx context.Context, vote *apiv1.Vote, opts *apiv1.CreateVoteOptions) (v *apiv1.Vote, err error) {
+func (svc service) CreateVote(ctx context.Context, vote *proto.Vote, opts *proto.CreateVoteOptions) (v *proto.Vote, err error) {
 	_, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return nil, errs.ErrUnauthorized
@@ -23,7 +23,7 @@ func (svc service) CreateVote(ctx context.Context, vote *apiv1.Vote, opts *apiv1
 	//return nil, errs.ErrUnauthorized
 	//}
 	switch {
-	// case opts.ReqType == apiv1.CreateVoteOptions_BY_LATEST:
+	// case opts.ReqType == proto.CreateVoteOptions_BY_LATEST:
 	case vote.Username != "" && vote.Branch != "" && opts.Version == "latest":
 		v, err = svc.db.CreateVoteByLatest(vote)
 		if err != nil {
@@ -53,7 +53,7 @@ func (svc service) CreateVote(ctx context.Context, vote *apiv1.Vote, opts *apiv1
 	return nil, errs.ErrBadRequest
 }
 
-func (svc service) CreateVotes(ctx context.Context, votes []*apiv1.Vote, opts *apiv1.CreateVotesOptions) (v []*apiv1.Vote, err error) {
+func (svc service) CreateVotes(ctx context.Context, votes []*proto.Vote, opts *proto.CreateVotesOptions) (v []*proto.Vote, err error) {
 	username, usernameFound := ctx.Value("username").(string)
 	password, passwordFound := ctx.Value("password").(string)
 	if usernameFound && username != "" && passwordFound {
@@ -87,40 +87,45 @@ func (svc service) CreateVotes(ctx context.Context, votes []*apiv1.Vote, opts *a
 	return votes, nil
 }
 
-func (svc service) DeleteVote(ctx context.Context, upstream, ident string, opts *apiv1.DeleteVoteOptions) (err error) {
+func (svc service) DeleteVote(ctx context.Context, upstream, ident string, opts *proto.DeleteVoteOptions) (err error) {
 	uid, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return errs.ErrUnauthorized
 	}
-	perm, err := svc.hasPermission(uid, permissions.OpVoteDelete)
+
+	// get vote
+	// send to has perm
+	switch {
+	// case opts.ReqType == proto.DeleteVoteOptions_BY_USER_VERSION:
+	case opts.Username != "" && opts.Branch != "" && opts.Version != "":
+	default:
+		return errs.ErrBadRequest
+	}
+	version, err := strconv.Atoi(opts.Version)
 	if err != nil {
 		return err
 	}
-	if !perm {
+
+	v, err := svc.db.GetVoteByVersion(opts.Username, upstream, ident, opts.Branch, uint32(version))
+
+	if perm, err := svc.hasPermission(uid, permissions.OpVoteDelete, v); err != nil {
+		return err
+	} else if !perm {
 		return errs.ErrUnauthorized
 	}
-	switch {
-	// case opts.ReqType == apiv1.DeleteVoteOptions_BY_USER_VERSION:
-	case opts.Username != "" && opts.Branch != "" && opts.Version != "":
-		version, err := strconv.Atoi(opts.Version)
-		if err != nil {
-			return err
-		}
-		err = svc.db.DeleteVote(opts.Username, upstream, ident, opts.Branch, uint32(version))
-		if err != nil {
-			return err
-		}
-	default:
-		return errs.ErrBadRequest
+
+	err = svc.db.DeleteVote(opts.Username, upstream, ident, opts.Branch, uint32(version))
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func (svc service) GetVote(ctx context.Context, upstream, ident string, opts *apiv1.GetVoteOptions) (*apiv1.Vote, error) {
+func (svc service) GetVote(ctx context.Context, upstream, ident string, opts *proto.GetVoteOptions) (*proto.Vote, error) {
 	switch {
 	case opts == nil:
 		return nil, errs.ErrBadRequest
-	case opts.ReqType == apiv1.GetVoteOptions_BY_USER_VERSION:
+	case opts.ReqType == proto.GetVoteOptions_BY_USER_VERSION:
 		v, err := svc.getVote(opts.Username, upstream, ident, opts.Branch, opts.Version)
 		if err != nil {
 			return nil, err
@@ -130,8 +135,8 @@ func (svc service) GetVote(ctx context.Context, upstream, ident string, opts *ap
 	return nil, errs.ErrBadRequest
 }
 
-func (svc service) ListVotes(_ context.Context, opts *apiv1.ListVotesOptions) (*apiv1.ListVotesReply, error) {
-	var votes []*apiv1.Vote
+func (svc service) ListVotes(_ context.Context, opts *proto.ListVotesOptions) (*proto.ListVotesReply, error) {
+	var votes []*proto.Vote
 	var total int32
 	var err error
 	switch {
@@ -145,37 +150,33 @@ func (svc service) ListVotes(_ context.Context, opts *apiv1.ListVotesOptions) (*
 	if err != nil {
 		return nil, err
 	}
-	return &apiv1.ListVotesReply{
+	return &proto.ListVotesReply{
 		Votes: votes,
 		Total: total,
 	}, nil
 }
 
-func (svc service) UpdateVote(ctx context.Context, vote *apiv1.Vote, opts *apiv1.UpdateVoteOptions) (v *apiv1.Vote, err error) {
+func (svc service) UpdateVote(ctx context.Context, vote *proto.Vote, opts *proto.UpdateVoteOptions) (v *proto.Vote, err error) {
 	uid, ok := ctx.Value("user_id").(string)
 	if !ok {
-		return nil, errs.ErrUnauthorized
-	}
-	perm, err := svc.hasPermission(uid, permissions.OpVoteUpdate)
-	if err != nil {
-		return nil, err
-	}
-	if !perm {
 		return nil, errs.ErrUnauthorized
 	}
 	v, err = svc.getVote(vote.Username, vote.Upstream, vote.Ident, vote.Branch, vote.VersionId)
 	if err != nil {
 		return
 	}
+	if perm, err := svc.hasPermission(uid, permissions.OpVoteUpdate, v); err != nil {
+		return nil, err
+	} else if !perm {
+		return nil, errs.ErrUnauthorized
+	}
+
 	copyVote(v, vote)
 	v, err = svc.db.UpdateVote(v.Uid, v)
-	if err != nil {
-		return
-	}
 	return
 }
 
-func (svc service) getVote(username, upstream, ident, branch, version string) (vote *apiv1.Vote, err error) {
+func (svc service) getVote(username, upstream, ident, branch, version string) (vote *proto.Vote, err error) {
 	if hasBlank(username, upstream, ident, branch) {
 		return nil, errs.ErrBadRequest
 	}
@@ -204,7 +205,7 @@ func hasBlank(vars ...string) bool {
 	return false
 }
 
-func copyVote(to, from *apiv1.Vote) {
+func copyVote(to, from *proto.Vote) {
 	if from.LawId != "" {
 		to.LawId = from.LawId
 	}

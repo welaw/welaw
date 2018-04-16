@@ -7,13 +7,13 @@ import (
 	stdhttp "net/http"
 
 	"github.com/gorilla/mux"
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/endpoints"
 	"github.com/welaw/welaw/pkg/errs"
+	"github.com/welaw/welaw/proto"
 )
 
 func decodeHTTPCreateAnnotationRequest(_ context.Context, r *stdhttp.Request) (interface{}, error) {
-	var req apiv1.Annotation
+	var req proto.Annotation
 	err := json.NewDecoder(r.Body).Decode(&req)
 	return req, err
 }
@@ -29,13 +29,13 @@ func decodeHTTPDeleteAnnotationRequest(_ context.Context, r *stdhttp.Request) (i
 
 func decodeHTTPListAnnotationsRequest(_ context.Context, r *stdhttp.Request) (interface{}, error) {
 	var req endpoints.ListAnnotationsRequest
-	var opts apiv1.ListAnnotationsOptions
+	var opts proto.ListAnnotationsOptions
 	vars := r.URL.Query()
 	v, ok := vars["req_type"]
 	if ok && len(v) > 0 {
 		switch {
-		case v[0] == apiv1.ListAnnotationsOptions_BY_COMMENT.String():
-			opts.ReqType = apiv1.ListAnnotationsOptions_BY_COMMENT
+		case v[0] == proto.ListAnnotationsOptions_BY_COMMENT.String():
+			opts.ReqType = proto.ListAnnotationsOptions_BY_COMMENT
 			v, ok = vars["comment_id"]
 			if ok && len(v) > 0 {
 				opts.CommentId = v[0]

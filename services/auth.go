@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
 	"github.com/welaw/welaw/pkg/generate"
 	"github.com/welaw/welaw/pkg/oauth"
 	"github.com/welaw/welaw/pkg/permissions"
+	"github.com/welaw/welaw/proto"
 )
 
-func (svc service) LoggedInCheck(ctx context.Context) (*apiv1.User, error) {
+func (svc service) LoggedInCheck(ctx context.Context) (*proto.User, error) {
 	uid, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return nil, nil
@@ -27,22 +27,19 @@ func (svc service) LoggedInCheck(ctx context.Context) (*apiv1.User, error) {
 		return nil, err
 	}
 
-	admin, err := svc.hasPermission(uid, permissions.OpUserView)
-	if err != nil {
+	if perm, err := svc.hasPermission(uid, permissions.OpUserView, user); err != nil {
 		return nil, err
+	} else if perm {
+		roles, err := svc.db.ListUserRoles(user.Username)
+		if err != nil {
+			return nil, err
+		}
+		var roleNames []string
+		for _, r := range roles {
+			roleNames = append(roleNames, r.Name)
+		}
+		user.Roles = roleNames
 	}
-	if !admin {
-		return user, nil
-	}
-	roles, err := svc.db.ListUserRoles(user.Username)
-	if err != nil {
-		return nil, err
-	}
-	var roleNames []string
-	for _, r := range roles {
-		roleNames = append(roleNames, r.Name)
-	}
-	user.Roles = roleNames
 
 	return user, nil
 }
@@ -94,12 +91,12 @@ func (svc service) LoginCallback(ctx context.Context, state, code string) (*http
 	if err != nil {
 		return nil, nil, "", err
 	}
-	var user *apiv1.User
+	var user *proto.User
 	u, err := svc.db.GetUserByProviderId(auth.ProviderId, true)
 	switch {
 	case err == errs.ErrNotFound:
 		// register new user
-		user, err = svc.createNewUser(&apiv1.User{
+		user, err = svc.createNewUser(&proto.User{
 			Provider:        provider,
 			ProviderId:      auth.ProviderId,
 			FullName:        auth.Name,
@@ -162,11 +159,11 @@ func (svc service) LoginCallback(ctx context.Context, state, code string) (*http
 	return &cookie, &loginCookie, returnURL, nil
 }
 
-func (svc service) addUserRoles(ctx context.Context, user *apiv1.User, role string) error {
+func (svc service) addUserRoles(ctx context.Context, user *proto.User, role string) error {
 	return svc.db.CreateUserRoles(user.Username, []string{role})
 }
 
-func (svc service) deleteUserRoles(ctx context.Context, user *apiv1.User, role string) error {
+func (svc service) deleteUserRoles(ctx context.Context, user *proto.User, role string) error {
 	return svc.db.DeleteUserRoles(user.Username, []string{role})
 }
 
@@ -185,10 +182,10 @@ func (svc service) authorizeUser(ctx context.Context, user_id, role string) erro
 	return nil
 }
 
-func (svc service) hasPermission(user_id, operation string) (bool, error) {
-	if user_id == "" {
-		return false, nil
-	}
+func (svc service) hasPermission(user_id, operation string, target interface{}) (perm bool, err error) {
+
+	// owner, group, other
+
 	//switch operation {
 	//case permissions.OpUserView, permissions.OpLawView:
 	//return true, nil
@@ -196,14 +193,107 @@ func (svc service) hasPermission(user_id, operation string) (bool, error) {
 	//return false, nil
 	//}
 	//}
-	p, err := svc.db.HasPermission(user_id, operation)
+
+	if user_id == "" {
+		return false, nil
+	}
+
+	// create
+	// if user -> permission and group
+	// if law -> permission and group
+	// if branch -> anybody
+	// if version -> anybody
+	// if upstream -> permission
+	// if vote -> anybody
+
+	// list
+	// if user -> permission and group unless upstream target
+	// if law -> anybody
+	// if branch -> anybody
+	// if version -> anybody
+	// if upstream -> anybody
+	// if vote -> anybody
+
+	// update, delete
+	// if user -> if owner or permission and group
+	// if law -> if owner or permission and group
+	// if branch -> if owner or permission and group
+	// if version -> if owner or permission and group
+	// if upstream -> if owner or permission and group
+	// if vote -> if owner or permission and group
+
+	// view
+	// if user -> permission and group unless upstream target
+	// if law -> anybody
+	// if branch -> anybody
+	// if version -> anybody
+	// if upstream -> anybody
+	// if vote -> anybody
+
+	// get owner and upstream group of target object
+	var (
+		//user     *proto.User
+		owner_id string
+		upstream string
+	)
+	if u, ok := target.(*proto.User); ok {
+		//user = u.Uid
+		owner_id = u.Uid
+		upstream = u.GetUpstream()
+	} else if u, ok := target.(*proto.Upstream); ok {
+		owner_id = u.GetUserId()
+		upstream = u.GetIdent()
+	} else if law, ok := target.(*proto.Law); ok {
+		owner_id = law.GetUserId()
+		upstream = law.GetUpstream()
+	} else if branch, ok := target.(*proto.Branch); ok {
+		owner_id = branch.GetUserId()
+		upstream = branch.GetUpstream()
+	} else if version, ok := target.(*proto.Version); ok {
+		owner_id = version.GetUserId()
+		upstream = version.GetUpstreamGroup()
+	} else if vote, ok := target.(*proto.Vote); ok {
+		user, err := svc.db.GetUserById(vote.GetUserId(), false)
+		if err != nil {
+			return false, err
+		}
+		owner_id = user.GetUid()
+		upstream = vote.GetUpstream()
+	} else if c, ok := target.(*proto.Comment); ok {
+		owner_id = c.GetUserId()
+		upstream = c.GetUpstream()
+	} else {
+		return false, errs.BadRequest("unknown target: %+v", target)
+	}
+
+	// check if owner
+	if user_id == owner_id {
+		return true, nil
+	}
+
+	if perm, err := svc.db.HasPermission(user_id, operation); err != nil {
+		return false, err
+	} else if !perm {
+		return false, nil
+	}
+
+	// scope
+	scope, err := svc.db.GetUserAuthScope(user_id, operation)
 	if err != nil {
 		return false, err
+	} else if len(scope) == 0 {
+		return false, nil
 	}
-	return p, nil
+	for _, s := range scope {
+		if s == upstream {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
-func (svc service) LoginAs(ctx context.Context, authorization *apiv1.User) error {
+func (svc service) LoginAs(ctx context.Context, authorization *proto.User) error {
 	return nil
 }
 

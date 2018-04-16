@@ -1,13 +1,12 @@
 syntax = "proto3";
 
-import "api/v1/auth.proto";
-import "api/v1/ballot.proto";
-import "api/v1/law.proto";
-import "api/v1/user.proto";
-import "api/v1/upstream.proto";
+import "proto/auth.proto";
+import "proto/ballot.proto";
+import "proto/law.proto";
+import "proto/user.proto";
+import "proto/upstream.proto";
 
-package grpc.welaw.v1;
-/*option go_package = "welawv1";*/
+package proto;
 
 service WelawSvc {
     // Auth

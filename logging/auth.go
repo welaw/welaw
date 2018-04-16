@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw loggingMiddleware) LoggedInCheck(ctx context.Context) (user *apiv1.User, err error) {
+func (mw loggingMiddleware) LoggedInCheck(ctx context.Context) (user *proto.User, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "logged_in_check",
@@ -52,7 +52,7 @@ func (mw loggingMiddleware) LoginCallback(ctx context.Context, state, code strin
 	return
 }
 
-func (mw loggingMiddleware) LoginAs(ctx context.Context, user *apiv1.User) (err error) {
+func (mw loggingMiddleware) LoginAs(ctx context.Context, user *proto.User) (err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "login_as",

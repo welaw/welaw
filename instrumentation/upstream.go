@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw instrumentatingMiddleware) CreateUpstream(ctx context.Context, u *apiv1.Upstream) (err error) {
+func (mw instrumentatingMiddleware) CreateUpstream(ctx context.Context, u *proto.Upstream) (err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "create_upstream", "error", ""}
 		mw.requestCount.With(lvs...).Add(1)
@@ -19,7 +19,7 @@ func (mw instrumentatingMiddleware) CreateUpstream(ctx context.Context, u *apiv1
 	return
 }
 
-func (mw instrumentatingMiddleware) GetUpstream(ctx context.Context, ident string) (u *apiv1.Upstream, err error) {
+func (mw instrumentatingMiddleware) GetUpstream(ctx context.Context, ident string) (u *proto.Upstream, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "get_upstream", "error", ""}
 		mw.requestCount.With(lvs...).Add(1)
@@ -30,7 +30,7 @@ func (mw instrumentatingMiddleware) GetUpstream(ctx context.Context, ident strin
 	return
 }
 
-func (mw instrumentatingMiddleware) ListUpstreams(ctx context.Context) (res []*apiv1.Upstream, err error) {
+func (mw instrumentatingMiddleware) ListUpstreams(ctx context.Context) (res []*proto.Upstream, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "list_upstreams", "error", ""}
 		mw.requestCount.With(lvs...).Add(1)
@@ -41,7 +41,7 @@ func (mw instrumentatingMiddleware) ListUpstreams(ctx context.Context) (res []*a
 	return
 }
 
-func (mw instrumentatingMiddleware) UpdateUpstream(ctx context.Context, u *apiv1.Upstream) (err error) {
+func (mw instrumentatingMiddleware) UpdateUpstream(ctx context.Context, u *proto.Upstream) (err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "update_upstream", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)

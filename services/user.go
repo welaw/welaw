@@ -5,21 +5,19 @@ import (
 	"fmt"
 	"strings"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
 	"github.com/welaw/welaw/pkg/permissions"
+	"github.com/welaw/welaw/proto"
 )
 
-func (svc service) CreateUser(ctx context.Context, user *apiv1.User) (u *apiv1.User, err error) {
+func (svc service) CreateUser(ctx context.Context, user *proto.User) (u *proto.User, err error) {
 	uid, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return nil, errs.ErrUnauthorized
 	}
-	perm, err := svc.hasPermission(uid, permissions.OpUserView)
-	if err != nil {
+	if perm, err := svc.hasPermission(uid, permissions.OpUserCreate, user); err != nil {
 		return nil, err
-	}
-	if !perm {
+	} else if !perm {
 		return nil, errs.ErrUnauthorized
 	}
 	if err = svc.verifyUsername(user); err != nil {
@@ -39,7 +37,7 @@ func (svc service) CreateUser(ctx context.Context, user *apiv1.User) (u *apiv1.U
 	return nil, err
 }
 
-func (svc service) CreateUsers(ctx context.Context, users []*apiv1.User) (u []*apiv1.User, err error) {
+func (svc service) CreateUsers(ctx context.Context, users []*proto.User) (u []*proto.User, err error) {
 	username, ok := ctx.Value("username").(string)
 	if !ok {
 		return nil, errs.ErrUnauthorized
@@ -48,16 +46,14 @@ func (svc service) CreateUsers(ctx context.Context, users []*apiv1.User) (u []*a
 	if !ok {
 		return nil, errs.ErrUnauthorized
 	}
-	pass, err := svc.db.AuthorizeUser(username, password, permissions.OpUserCreate)
-	switch {
-	case err == errs.ErrNotFound:
-		return nil, errs.ErrUnauthorized
-	case err != nil:
+
+	if perm, err := svc.db.AuthorizeUser(username, password, permissions.OpUserCreate); err != nil {
 		return nil, err
-	case pass == false:
+	} else if !perm {
 		return nil, errs.ErrUnauthorized
 	}
-	var done []*apiv1.User
+
+	var done []*proto.User
 	for _, u := range users {
 		if err = svc.verifyUsername(u); err != nil {
 			return done, err
@@ -71,11 +67,11 @@ func (svc service) CreateUsers(ctx context.Context, users []*apiv1.User) (u []*a
 	return done, nil
 }
 
-func (svc service) createUserWithId(user *apiv1.User) (u *apiv1.User, err error) {
+func (svc service) createUserWithId(user *proto.User) (u *proto.User, err error) {
 	return svc.db.CreateUserWithId(user)
 }
 
-func (svc service) createUpstreamUser(user *apiv1.User) (u *apiv1.User, err error) {
+func (svc service) createUpstreamUser(user *proto.User) (u *proto.User, err error) {
 	user.Provider = "welaw"
 	u, err = svc.db.CreateUser(user)
 	if err != nil {
@@ -88,7 +84,7 @@ func (svc service) createUpstreamUser(user *apiv1.User) (u *apiv1.User, err erro
 	return u, nil
 }
 
-func (svc service) createNewUser(user *apiv1.User) (u *apiv1.User, err error) {
+func (svc service) createNewUser(user *proto.User) (u *proto.User, err error) {
 	u, err = svc.db.CreateUser(user)
 	if err != nil {
 		return nil, err
@@ -101,49 +97,58 @@ func (svc service) DeleteUser(ctx context.Context, username string) error {
 	if !ok {
 		return errs.ErrUnauthorized
 	}
-	admin, err := svc.db.HasPermission(uid, permissions.OpUserDelete)
+
+	u, err := svc.db.GetUserByUsername(username, false)
 	if err != nil {
 		return err
 	}
-	u, err := svc.db.GetUserById(uid, true)
-	if err != nil {
+
+	if perm, err := svc.hasPermission(uid, permissions.OpUserDelete, u); err != nil {
 		return err
+	} else if !perm {
+		return errs.ErrUnauthorized
 	}
-	if !admin {
-		if u.Username != username {
-			return errs.ErrUnauthorized
-		}
-	}
+
+	// get user by username
+	// send to has perm
+
+	//u, err := svc.db.GetUserById(uid, true)
+	//if err != nil {
+	//return err
+	//}
+	//if !admin {
+	//if u.Username != username {
+	//return errs.ErrUnauthorized
+	//}
+	//}
+	// get user by username
+
 	err = svc.db.DeleteUser(username)
 	return err
 }
 
-func (svc service) GetUser(ctx context.Context, opts *apiv1.GetUserOptions) (user *apiv1.User, err error) {
+func (svc service) GetUser(ctx context.Context, opts *proto.GetUserOptions) (user *proto.User, err error) {
 	uid, ok := ctx.Value("user_id").(string)
-	//var auth bool
-	admin, err := svc.hasPermission(uid, permissions.OpUserView)
-	if err != nil {
-		return nil, err
-	}
 
+	// TODO
 	switch {
 	case opts == nil:
 		return nil, errs.BadRequest("opts must be set")
-	case opts.ReqType == apiv1.GetUserOptions_BY_UID:
-		user, err = svc.db.GetUserById(opts.Uid, admin)
+	case opts.ReqType == proto.GetUserOptions_BY_UID:
+		user, err = svc.db.GetUserById(opts.Uid, false)
 		if err != nil {
 			return nil, err
 		}
-	case opts.ReqType == apiv1.GetUserOptions_BY_USERNAME:
-		user, err = svc.db.GetUserByUsername(opts.Username, uid, admin)
+	case opts.ReqType == proto.GetUserOptions_BY_USERNAME:
+		user, err = svc.db.GetUserByUsername(opts.Username, false)
 		if err != nil {
 			return nil, err
 		}
-	case opts.ReqType == apiv1.GetUserOptions_BY_CONTEXT:
+	case opts.ReqType == proto.GetUserOptions_BY_CONTEXT:
 		if !ok {
 			return nil, errs.BadRequest("user_id not found")
 		}
-		user, err = svc.db.GetUserById(uid, admin)
+		user, err = svc.db.GetUserById(uid, false)
 		if err != nil {
 			return nil, err
 		}
@@ -151,12 +156,24 @@ func (svc service) GetUser(ctx context.Context, opts *apiv1.GetUserOptions) (use
 		return nil, errs.BadRequest("req_type not found: %+v", opts)
 	}
 
-	roles, err := svc.db.ListUserRoles(user.Username)
+	perm, err := svc.hasPermission(uid, permissions.OpUserView, user)
 	if err != nil {
 		return nil, err
 	}
+	// TODO
+	if perm {
+		user, err = svc.db.GetUserById(user.Uid, true)
+	}
 
-	if admin {
+	perm, err = svc.hasPermission(uid, permissions.OpRolesList, user)
+	if err != nil {
+		return nil, err
+	}
+	if perm {
+		roles, err := svc.db.ListUserRoles(user.Username)
+		if err != nil {
+			return nil, err
+		}
 		var roleNames []string
 		for _, r := range roles {
 			roleNames = append(roleNames, r.Name)
@@ -167,7 +184,7 @@ func (svc service) GetUser(ctx context.Context, opts *apiv1.GetUserOptions) (use
 	return user, nil
 }
 
-func (svc service) ListUsers(ctx context.Context, opts *apiv1.ListUsersOptions) (users []*apiv1.User, total int, err error) {
+func (svc service) ListUsers(ctx context.Context, opts *proto.ListUsersOptions) (users []*proto.User, total int, err error) {
 	uid, ok := ctx.Value("user_id").(string)
 
 	switch {
@@ -178,12 +195,9 @@ func (svc service) ListUsers(ctx context.Context, opts *apiv1.ListUsersOptions) 
 		if !ok {
 			return nil, 0, errs.ErrUnauthorized
 		}
-		var permission bool
-		permission, err = svc.hasPermission(uid, permissions.OpUserView)
-		if err != nil {
-			return
-		}
-		if !permission {
+		if perm, err := svc.hasPermission(uid, permissions.OpUserList, nil); err != nil {
+			return nil, 0, err
+		} else if !perm {
 			return nil, 0, errs.ErrUnauthorized
 		}
 		users, total, err = svc.db.FilterAllUsers(opts.PageSize, opts.PageNum, true, opts.Search)
@@ -191,12 +205,9 @@ func (svc service) ListUsers(ctx context.Context, opts *apiv1.ListUsersOptions) 
 		if !ok {
 			return nil, 0, errs.ErrUnauthorized
 		}
-		var permission bool
-		permission, err = svc.db.HasPermission(uid, permissions.OpUserView)
-		if err != nil {
-			return
-		}
-		if !permission {
+		if perm, err := svc.hasPermission(uid, permissions.OpUserList, nil); err != nil {
+			return nil, 0, err
+		} else if !perm {
 			return nil, 0, errs.ErrUnauthorized
 		}
 
@@ -207,12 +218,9 @@ func (svc service) ListUsers(ctx context.Context, opts *apiv1.ListUsersOptions) 
 		if !ok {
 			return nil, 0, errs.ErrUnauthorized
 		}
-		var permission bool
-		permission, err = svc.db.HasPermission(uid, permissions.OpUserView)
-		if err != nil {
-			return
-		}
-		if !permission {
+		if perm, err := svc.hasPermission(uid, permissions.OpUserList, nil); err != nil {
+			return nil, 0, err
+		} else if !perm {
 			return nil, 0, errs.ErrUnauthorized
 		}
 		users, total, err = svc.db.ListPublicUsers(opts.PageSize, opts.PageNum, true)
@@ -223,7 +231,7 @@ func (svc service) ListUsers(ctx context.Context, opts *apiv1.ListUsersOptions) 
 	return users, total, nil
 }
 
-func (svc service) UpdateUser(ctx context.Context, username string, opts *apiv1.UpdateUserOptions) (u *apiv1.User, err error) {
+func (svc service) UpdateUser(ctx context.Context, username string, opts *proto.UpdateUserOptions) (u *proto.User, err error) {
 	uid, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return nil, errs.ErrUnauthorized
@@ -233,28 +241,33 @@ func (svc service) UpdateUser(ctx context.Context, username string, opts *apiv1.
 		return nil, fmt.Errorf("options not found")
 	}
 
-	var admin bool
-	admin, err = svc.db.HasPermission(uid, permissions.OpUserUpdate)
-	if err != nil {
-		return
-	}
-
-	loggedInUser, err := svc.db.GetUserById(uid, true)
+	user, err := svc.db.GetUserByUsername(username, true)
 	if err != nil {
 		return nil, err
 	}
 
-	if username != loggedInUser.Username && !admin {
+	if perm, err := svc.hasPermission(uid, permissions.OpUserUpdate, user); err != nil {
+		return nil, err
+	} else if !perm {
 		return nil, errs.ErrUnauthorized
 	}
 
-	user, err := svc.db.GetUserByUsername(username, loggedInUser.Uid, true)
-	if err != nil {
-		return nil, err
-	}
+	//loggedInUser, err := svc.db.GetUserById(uid, perm)
+	//if err != nil {
+	//return nil, err
+	//}
+
+	//if username != loggedInUser.Username && !admin {
+	//return nil, errs.ErrUnauthorized
+	//}
+
+	//user, err := svc.db.GetUserByUsername(username, loggedInUser.Uid, true)
+	//if err != nil {
+	//return nil, err
+	//}
 
 	// TODO
-	//u := &apiv1.User{Uid: _uid}
+	//u := &proto.User{Uid: _uid}
 	if opts.Username != "" {
 		user.Username = opts.Username
 	}
@@ -268,12 +281,13 @@ func (svc service) UpdateUser(ctx context.Context, username string, opts *apiv1.
 		user.PictureUrl = opts.PictureUrl
 	}
 
-	if opts.Email != "" || opts.Biography != "" || opts.PictureUrl != "" || opts.Password != "" {
-		if !admin {
-			return nil, errs.ErrUnauthorized
-		}
-	}
+	//if opts.Email != "" || opts.Biography != "" || opts.PictureUrl != "" || opts.Password != "" {
+	//if !admin {
+	//return nil, errs.ErrUnauthorized
+	//}
+	//}
 
+	// TODO
 	if opts.Password != "" {
 		err = svc.db.SetPassword(user.Uid, opts.Password)
 	} else {
@@ -283,50 +297,51 @@ func (svc service) UpdateUser(ctx context.Context, username string, opts *apiv1.
 	return u, err
 }
 
-func (svc service) UploadAvatar(ctx context.Context, opts *apiv1.UploadAvatarOptions) (err error) {
-	uid, userIDFound := ctx.Value("user_id").(string)
-	username, usernameFound := ctx.Value("username").(string)
-	password, passwordFound := ctx.Value("password").(string)
-
+func (svc service) UploadAvatar(ctx context.Context, opts *proto.UploadAvatarOptions) (err error) {
+	// check for bad input
 	if opts == nil || opts.Image == nil || opts.Username == "" {
 		return errs.ErrBadRequest
 	}
 
-	var userID string
-	switch {
-	case userIDFound:
-		userID = uid
-	case usernameFound && passwordFound:
-		pass, err := svc.db.AuthorizeUser(username, password, permissions.OpUserCreate)
+	// authorize
+	username, _ := ctx.Value("username").(string)
+	password, _ := ctx.Value("password").(string)
+	uid, _ := ctx.Value("user_id").(string)
+	if username != "" && password != "" {
+		perm, err := svc.db.AuthorizeUser(username, password, permissions.OpUserUpdate)
 		switch {
 		case err == errs.ErrNotFound:
 			return errs.ErrUnauthorized
 		case err != nil:
 			return err
-		case pass == false:
+		case !perm:
 			return errs.ErrUnauthorized
 		}
-		user, err := svc.db.GetUserByUsername(opts.Username, "", false)
+		user, err := svc.db.GetUserByUsername(username, false)
 		if err != nil {
 			return err
 		}
-		userID = user.Uid
-	default:
+		uid = user.Uid
+	}
+	if uid == "" {
 		return errs.ErrUnauthorized
 	}
 
-	filename := fmt.Sprintf("%s/%s.jpg", svc.Opts.AvatarDir, userID)
-
-	// save image
-	err = svc.fs.Put(filename, "image/jpeg", opts.Image)
-	if err != nil {
+	// get the target user
+	user, err := svc.db.GetUserByUsername(opts.Username, false)
+	if perm, err := svc.hasPermission(uid, permissions.OpUserUpdate, user); err != nil {
 		return err
+	} else if !perm {
+		return errs.ErrUnauthorized
 	}
 
-	return nil
+	// save image
+	filename := fmt.Sprintf("%s/%s.jpg", svc.Opts.AvatarDir, user.Uid)
+	err = svc.fs.Put(filename, "image/jpeg", opts.Image)
+	return err
 }
 
-func (svc service) verifyUsername(user *apiv1.User) error {
+func (svc service) verifyUsername(user *proto.User) error {
 	// TODO
 	restricted := []string{
 		"admin",

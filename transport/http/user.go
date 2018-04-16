@@ -8,9 +8,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/endpoints"
 	"github.com/welaw/welaw/pkg/errs"
+	"github.com/welaw/welaw/proto"
 )
 
 func decodeHTTPCreateUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
@@ -58,7 +58,7 @@ func decodeHTTPUploadAvatarRequest(_ context.Context, r *http.Request) (interfac
 		return nil, err
 	}
 	var req endpoints.UploadAvatarRequest
-	var opts apiv1.UploadAvatarOptions
+	var opts proto.UploadAvatarOptions
 	var buf bytes.Buffer
 	io.Copy(&buf, file)
 	opts.Image = buf.Bytes()

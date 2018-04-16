@@ -10,6 +10,8 @@ CREATE TABLE upstreams (
     default_user            UUID NOT NULL DEFAULT uuid_nil(),
     geo_coords              POINT,
     metadata                JSONB NOT NULL DEFAULT '{}'::jsonb,
+    tags                    JSONB NOT NULL DEFAULT '{}'::jsonb,
+    user_id                 UUID NOT NULL,
     created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at              TIMESTAMP WITHOUT TIME ZONE

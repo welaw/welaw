@@ -14,6 +14,9 @@ CREATE TABLE users (
     upstream            UUID,
     password            varchar,
     metadata            jsonb NOT NULL DEFAULT '{}'::jsonb,
+
+    groups              TEXT NOT NULL DEFAULT '',
+
     last_login          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

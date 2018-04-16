@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-import "api/v1/user.proto";
+import "proto/user.proto";
 
-package grpc.welaw.v1;
+package proto;
 
 message Comment {
     string comment = 1;

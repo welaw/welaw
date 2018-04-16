@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw loggingMiddleware) CreateVote(ctx context.Context, vote *apiv1.Vote, opts *apiv1.CreateVoteOptions) (v *apiv1.Vote, err error) {
+func (mw loggingMiddleware) CreateVote(ctx context.Context, vote *proto.Vote, opts *proto.CreateVoteOptions) (v *proto.Vote, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "create_vote",
@@ -23,7 +23,7 @@ func (mw loggingMiddleware) CreateVote(ctx context.Context, vote *apiv1.Vote, op
 	return
 }
 
-func (mw loggingMiddleware) CreateVotes(ctx context.Context, votes []*apiv1.Vote, opts *apiv1.CreateVotesOptions) (v []*apiv1.Vote, err error) {
+func (mw loggingMiddleware) CreateVotes(ctx context.Context, votes []*proto.Vote, opts *proto.CreateVotesOptions) (v []*proto.Vote, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "create_votes",
@@ -39,7 +39,7 @@ func (mw loggingMiddleware) CreateVotes(ctx context.Context, votes []*apiv1.Vote
 	return
 }
 
-func (mw loggingMiddleware) GetVote(ctx context.Context, upstream, ident string, opts *apiv1.GetVoteOptions) (v *apiv1.Vote, err error) {
+func (mw loggingMiddleware) GetVote(ctx context.Context, upstream, ident string, opts *proto.GetVoteOptions) (v *proto.Vote, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "get_vote",
@@ -56,7 +56,7 @@ func (mw loggingMiddleware) GetVote(ctx context.Context, upstream, ident string,
 	return
 }
 
-func (mw loggingMiddleware) DeleteVote(ctx context.Context, upstream, ident string, opts *apiv1.DeleteVoteOptions) (err error) {
+func (mw loggingMiddleware) DeleteVote(ctx context.Context, upstream, ident string, opts *proto.DeleteVoteOptions) (err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "delete_vote",
@@ -72,7 +72,7 @@ func (mw loggingMiddleware) DeleteVote(ctx context.Context, upstream, ident stri
 	return
 }
 
-func (mw loggingMiddleware) ListVotes(ctx context.Context, opts *apiv1.ListVotesOptions) (rep *apiv1.ListVotesReply, err error) {
+func (mw loggingMiddleware) ListVotes(ctx context.Context, opts *proto.ListVotesOptions) (rep *proto.ListVotesReply, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "list_votes",
@@ -87,7 +87,7 @@ func (mw loggingMiddleware) ListVotes(ctx context.Context, opts *apiv1.ListVotes
 	return
 }
 
-func (mw loggingMiddleware) UpdateVote(ctx context.Context, vote *apiv1.Vote, opts *apiv1.UpdateVoteOptions) (v *apiv1.Vote, err error) {
+func (mw loggingMiddleware) UpdateVote(ctx context.Context, vote *proto.Vote, opts *proto.UpdateVoteOptions) (v *proto.Vote, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "update_vote",

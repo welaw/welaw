@@ -5,8 +5,7 @@ CREATE MATERIALIZED VIEW search_index AS
         setweight(to_tsvector('english'::regconfig, laws.title), 'A') ||
         setweight(to_tsvector('english'::regconfig, laws.short_title), 'A') ||
         setweight(to_tsvector('english'::regconfig, users.username), 'A') ||
-        setweight(to_tsvector('english'::regconfig, users.full_name), 'A') ||
-        setweight(to_tsvector('english'::regconfig, versions.tag_3), 'A') as doc
+        setweight(to_tsvector('english'::regconfig, users.full_name), 'A') as doc
     FROM versions
     INNER JOIN branches ON branches.uid = versions.branch_id
     INNER JOIN users ON users.uid = versions.user_id
@@ -29,8 +28,7 @@ CREATE MATERIALIZED VIEW word_index AS
         'SELECT to_tsvector(''simple'', laws.title) ||
             to_tsvector(''simple'', laws.short_title) ||
             to_tsvector(''simple'', users.username) ||
-            to_tsvector(''simple'', users.full_name) ||
-            to_tsvector(''simple'', versions.tag_3)
+            to_tsvector(''simple'', users.full_name)
         FROM versions
         INNER JOIN branches ON branches.uid = versions.branch_id
         INNER JOIN users ON users.uid = versions.user_id

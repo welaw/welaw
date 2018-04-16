@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
+	"github.com/welaw/welaw/proto"
 )
 
 // new user
-func (db *_database) CreateUser(u *apiv1.User) (*apiv1.User, error) {
+func (db *_database) CreateUser(u *proto.User) (*proto.User, error) {
 	q := `
 	INSERT INTO users (
 		username,
@@ -59,7 +59,7 @@ func (db *_database) CreateUser(u *apiv1.User) (*apiv1.User, error) {
 }
 
 // new user
-func (db *_database) CreateUserWithId(u *apiv1.User) (*apiv1.User, error) {
+func (db *_database) CreateUserWithId(u *proto.User) (*proto.User, error) {
 	q := `
 	INSERT INTO users (
 		uid,
@@ -104,7 +104,7 @@ func (db *_database) CreateUserWithId(u *apiv1.User) (*apiv1.User, error) {
 	return u, nil
 }
 
-func (db *_database) createUpstreamUser(u *apiv1.User) (*apiv1.User, error) {
+func (db *_database) createUpstreamUser(u *proto.User) (*proto.User, error) {
 	q := `
 	INSERT INTO users (
 		username,
@@ -157,8 +157,8 @@ func (db *_database) DeleteUser(username string) (err error) {
 }
 
 // only internal?
-func (db *_database) GetUserById(uid string, admin bool) (*apiv1.User, error) {
-	db.logger.Log("method", "get_user_by_id", "uid", uid, "admin", admin)
+func (db *_database) GetUserById(uid string, full bool) (*proto.User, error) {
+	db.logger.Log("method", "get_user_by_id", "uid", uid, "full", full)
 	q := `
 	SELECT users.key,
 		users.provider_id,
@@ -185,8 +185,8 @@ func (db *_database) GetUserById(uid string, admin bool) (*apiv1.User, error) {
 	WHERE users.uid = $1
 		AND	users.deleted_at IS NULL
 	`
-	u := &apiv1.User{Uid: uid}
-	err := db.conn.QueryRow(q, uid, admin).Scan(
+	u := &proto.User{Uid: uid}
+	err := db.conn.QueryRow(q, uid, full).Scan(
 		&u.Key,
 		&u.ProviderId,
 		&u.Username,
@@ -210,7 +210,7 @@ func (db *_database) GetUserById(uid string, admin bool) (*apiv1.User, error) {
 }
 
 // GetUserByProviderId is used by auth and will return the latest user, deleted or not.
-func (db *_database) GetUserByProviderId(pid string, admin bool) (*apiv1.User, error) {
+func (db *_database) GetUserByProviderId(pid string, full bool) (*proto.User, error) {
 	db.logger.Log("method", "get_user_by_provider_id", "pid", pid)
 	if pid == "" {
 		return nil, errs.ErrNotFound
@@ -244,9 +244,9 @@ func (db *_database) GetUserByProviderId(pid string, admin bool) (*apiv1.User, e
 	ORDER BY users.created_at DESC
 	LIMIT 1
 	`
-	u := &apiv1.User{ProviderId: pid}
+	u := &proto.User{ProviderId: pid}
 	var t bool
-	err := db.conn.QueryRow(q, pid, admin).Scan(
+	err := db.conn.QueryRow(q, pid, full).Scan(
 		&u.Key,
 		&u.Uid,
 		&u.Username,
@@ -276,19 +276,18 @@ func (db *_database) GetUserByProviderId(pid string, admin bool) (*apiv1.User, e
 	return u, nil
 }
 
-func (db *_database) GetUserByUsername(username, uid string, admin bool) (*apiv1.User, error) {
-	//db.logger.Log("method", "get_user_by_username", "username", username, "admin", admin)
+func (db *_database) GetUserByUsername(username string, full bool) (*proto.User, error) {
+	db.logger.Log("method", "get_user_by_username", "username", username, "full", full)
+
 	q := `
 	SELECT users.key,
 		users.uid,
 		CASE WHEN $2 THEN users.full_name
-			WHEN users.uid::varchar = $3 THEN users.full_name
 			WHEN users.full_name_private THEN ''
 			ELSE users.full_name
 		END,
 		users.full_name_private,
 		CASE WHEN $2 THEN users.email
-			WHEN users.uid::varchar = $3 THEN users.email
 			WHEN users.email_private THEN ''
 			ELSE users.email
 		END,
@@ -308,8 +307,8 @@ func (db *_database) GetUserByUsername(username, uid string, admin bool) (*apiv1
 	WHERE LOWER(users.username) = LOWER($1)
 		AND	users.deleted_at IS NULL
 	`
-	u := apiv1.User{Username: username}
-	err := db.conn.QueryRow(q, username, admin, uid).Scan(
+	u := proto.User{Username: username}
+	err := db.conn.QueryRow(q, username, full).Scan(
 		&u.Key,
 		&u.Uid,
 		&u.FullName,
@@ -334,7 +333,7 @@ func (db *_database) GetUserByUsername(username, uid string, admin bool) (*apiv1
 	return &u, nil
 }
 
-func (db *_database) FilterAllUsers(pageSize, pageNum int32, admin bool, search string) (us []*apiv1.User, total int, err error) {
+func (db *_database) FilterAllUsers(pageSize, pageNum int32, full bool, search string) (us []*proto.User, total int, err error) {
 	if pageNum < 0 {
 		return nil, 0, fmt.Errorf("bad pageNum: %v", pageNum)
 	}
@@ -364,14 +363,14 @@ func (db *_database) FilterAllUsers(pageSize, pageNum int32, admin bool, search 
 	OFFSET $1
 	LIMIT $2
 	`
-	rows, err := db.conn.Query(q, offset, pageSize, admin)
+	rows, err := db.conn.Query(q, offset, pageSize, full)
 	if err != nil {
 		return
 	}
 	defer rows.Close()
 	var usernameLeven, fullNameLeven int
 	for rows.Next() {
-		u := new(apiv1.User)
+		u := new(proto.User)
 		err = rows.Scan(
 			&u.Uid,
 			&u.Username,
@@ -395,7 +394,7 @@ func (db *_database) FilterAllUsers(pageSize, pageNum int32, admin bool, search 
 	return
 }
 
-func (db *_database) ListAllUsers(pageSize, pageNum int32, admin bool) (us []*apiv1.User, total int, err error) {
+func (db *_database) ListAllUsers(pageSize, pageNum int32, full bool) (us []*proto.User, total int, err error) {
 	if pageNum < 0 {
 		return nil, 0, fmt.Errorf("bad pageNum: %v", pageNum)
 	}
@@ -425,13 +424,13 @@ func (db *_database) ListAllUsers(pageSize, pageNum int32, admin bool) (us []*ap
 	OFFSET $1
 	LIMIT $2
 	`
-	rows, err := db.conn.Query(q, pageSize*pageNum, pageSize, admin)
+	rows, err := db.conn.Query(q, pageSize*pageNum, pageSize, full)
 	if err != nil {
 		return
 	}
 	defer rows.Close()
 	for rows.Next() {
-		u := new(apiv1.User)
+		u := new(proto.User)
 		err = rows.Scan(
 			&u.Uid,
 			&u.Username,
@@ -453,7 +452,7 @@ func (db *_database) ListAllUsers(pageSize, pageNum int32, admin bool) (us []*ap
 	return
 }
 
-func (db *_database) ListPublicUsers(pageSize, pageNum int32, admin bool) (us []*apiv1.User, total int, err error) {
+func (db *_database) ListPublicUsers(pageSize, pageNum int32, full bool) (us []*proto.User, total int, err error) {
 	if pageNum < 0 {
 		return nil, 0, fmt.Errorf("bad pageNum: %v", pageNum)
 	}
@@ -482,13 +481,13 @@ func (db *_database) ListPublicUsers(pageSize, pageNum int32, admin bool) (us []
 	OFFSET $1
 	LIMIT $2
 	`
-	rows, err := db.conn.Query(q, pageSize*pageNum, pageSize, admin)
+	rows, err := db.conn.Query(q, pageSize*pageNum, pageSize, full)
 	if err != nil {
 		return
 	}
 	defer rows.Close()
 	for rows.Next() {
-		u := new(apiv1.User)
+		u := new(proto.User)
 		err = rows.Scan(
 			&u.Uid,
 			&u.Username,
@@ -509,7 +508,7 @@ func (db *_database) ListPublicUsers(pageSize, pageNum int32, admin bool) (us []
 	return
 }
 
-func (db *_database) ListUpstreamUsers(upstream string, pageSize, pageNum int32) (users []*apiv1.User, total int, err error) {
+func (db *_database) ListUpstreamUsers(upstream string, pageSize, pageNum int32) (users []*proto.User, total int, err error) {
 	if pageNum < 0 {
 		return nil, 0, fmt.Errorf("bad pageNum: %v", pageNum)
 	}
@@ -559,7 +558,7 @@ func (db *_database) ListUpstreamUsers(upstream string, pageSize, pageNum int32)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		u := new(apiv1.User)
+		u := new(proto.User)
 		u.Upstream = upstream
 		err = rows.Scan(
 			&u.Uid,
@@ -626,7 +625,7 @@ func (db *_database) SetPassword(uid string, password string) (err error) {
 	return
 }
 
-func (db *_database) UpdateUser(uid string, user *apiv1.User) (u *apiv1.User, err error) {
+func (db *_database) UpdateUser(uid string, user *proto.User) (u *proto.User, err error) {
 	tx, err := db.conn.Begin()
 	if err != nil {
 		return
@@ -756,7 +755,7 @@ func (db *_database) UpdateUser(uid string, user *apiv1.User) (u *apiv1.User, er
 	return user, nil
 }
 
-//func copyUser(from, to *apiv1.User) error {
+//func copyUser(from, to *proto.User) error {
 //if to.Key != "" {
 //from.Key = to.Key
 //}

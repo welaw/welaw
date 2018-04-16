@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 	"github.com/welaw/welaw/services"
 )
 
-func (e Endpoints) CreateUpstream(ctx context.Context, u *apiv1.Upstream) error {
+func (e Endpoints) CreateUpstream(ctx context.Context, u *proto.Upstream) error {
 	req := CreateUpstreamRequest{Upstream: u}
 	resp, err := e.CreateUpstreamEndpoint(ctx, req)
 	if err != nil {
@@ -18,7 +18,7 @@ func (e Endpoints) CreateUpstream(ctx context.Context, u *apiv1.Upstream) error 
 	return r.Err
 }
 
-func (e Endpoints) GetUpstream(ctx context.Context, ident string) (*apiv1.Upstream, error) {
+func (e Endpoints) GetUpstream(ctx context.Context, ident string) (*proto.Upstream, error) {
 	req := GetUpstreamRequest{Ident: ident}
 	resp, err := e.GetUpstreamEndpoint(ctx, req)
 	if err != nil {
@@ -28,7 +28,7 @@ func (e Endpoints) GetUpstream(ctx context.Context, ident string) (*apiv1.Upstre
 	return r.Upstream, r.Err
 }
 
-func (e Endpoints) ListUpstreams(ctx context.Context) ([]*apiv1.Upstream, error) {
+func (e Endpoints) ListUpstreams(ctx context.Context) ([]*proto.Upstream, error) {
 	req := ListUpstreamsRequest{}
 	resp, err := e.ListUpstreamsEndpoint(ctx, req)
 	if err != nil {
@@ -38,7 +38,7 @@ func (e Endpoints) ListUpstreams(ctx context.Context) ([]*apiv1.Upstream, error)
 	return r.Upstreams, r.Err
 }
 
-func (e Endpoints) UpdateUpstream(ctx context.Context, upstream *apiv1.Upstream) error {
+func (e Endpoints) UpdateUpstream(ctx context.Context, upstream *proto.Upstream) error {
 	req := UpdateUpstreamRequest{Upstream: upstream}
 	resp, err := e.UpdateUpstreamEndpoint(ctx, req)
 	if err != nil {
@@ -84,7 +84,7 @@ func MakeUpdateUpstreamEndpoint(svc services.Service) endpoint.Endpoint {
 }
 
 type CreateUpstreamRequest struct {
-	Upstream *apiv1.Upstream `json:"upstream"`
+	Upstream *proto.Upstream `json:"upstream"`
 }
 
 type CreateUpstreamResponse struct {
@@ -98,9 +98,9 @@ type GetUpstreamRequest struct {
 }
 
 type GetUpstreamResponse struct {
-	Upstream *apiv1.Upstream `json:"upstream"`
-	Laws     []*apiv1.LawSet `json:"laws"`
-	Users    []*apiv1.User   `json:"user"`
+	Upstream *proto.Upstream `json:"upstream"`
+	Laws     []*proto.LawSet `json:"laws"`
+	Users    []*proto.User   `json:"user"`
 	Err      error           `json:"-"`
 }
 
@@ -109,14 +109,14 @@ func (r GetUpstreamResponse) Failed() error { return r.Err }
 type ListUpstreamsRequest struct{}
 
 type ListUpstreamsResponse struct {
-	Upstreams []*apiv1.Upstream `json:"upstreams"`
+	Upstreams []*proto.Upstream `json:"upstreams"`
 	Err       error             `json:"-"`
 }
 
 func (r ListUpstreamsResponse) Failed() error { return r.Err }
 
 type UpdateUpstreamRequest struct {
-	Upstream *apiv1.Upstream `json:"upstream"`
+	Upstream *proto.Upstream `json:"upstream"`
 }
 
 type UpdateUpstreamResponse struct {

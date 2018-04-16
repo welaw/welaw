@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw loggingMiddleware) GetServerStats(ctx context.Context) (stats *apiv1.ServerStats, err error) {
+func (mw loggingMiddleware) GetServerStats(ctx context.Context) (stats *proto.ServerStats, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "get_server_stats",
@@ -20,7 +20,7 @@ func (mw loggingMiddleware) GetServerStats(ctx context.Context) (stats *apiv1.Se
 	return
 }
 
-func (mw loggingMiddleware) LoadRepos(ctx context.Context, opts *apiv1.LoadReposOptions) (r *apiv1.LoadReposReply, err error) {
+func (mw loggingMiddleware) LoadRepos(ctx context.Context, opts *proto.LoadReposOptions) (r *proto.LoadReposReply, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "load_repos",
@@ -34,7 +34,7 @@ func (mw loggingMiddleware) LoadRepos(ctx context.Context, opts *apiv1.LoadRepos
 	return
 }
 
-func (mw loggingMiddleware) SaveRepos(ctx context.Context, opts *apiv1.SaveReposOptions) (r *apiv1.SaveReposReply, err error) {
+func (mw loggingMiddleware) SaveRepos(ctx context.Context, opts *proto.SaveReposOptions) (r *proto.SaveReposReply, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "save_repos",

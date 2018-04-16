@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package grpc.welaw.v1;
+package proto;
 
 message UserRole {
     string name = 1;

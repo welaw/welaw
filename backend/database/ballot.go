@@ -8,8 +8,8 @@ import (
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/google/uuid"
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
+	"github.com/welaw/welaw/proto"
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 	voteResultFailed = "FAILED"
 )
 
-func (db *_database) CreateVoteResult(vr *apiv1.VoteResult) error {
+func (db *_database) CreateVoteResult(vr *proto.VoteResult) error {
 	q := `
 	INSERT INTO	vote_results (
 		law_id,
@@ -65,7 +65,7 @@ func (db *_database) CreateVoteResult(vr *apiv1.VoteResult) error {
 	return nil
 }
 
-func (db *_database) CreateVoteByLatest(vote *apiv1.Vote) (*apiv1.Vote, error) {
+func (db *_database) CreateVoteByLatest(vote *proto.Vote) (*proto.Vote, error) {
 	db.logger.Log("method", "create_vote_for_latest",
 		"username", vote.Username,
 		"upstream", vote.Upstream,
@@ -129,7 +129,7 @@ func (db *_database) CreateVoteByLatest(vote *apiv1.Vote) (*apiv1.Vote, error) {
 	return vote, nil
 }
 
-func (db *_database) CreateVoteByVersion(vote *apiv1.Vote) (*apiv1.Vote, error) {
+func (db *_database) CreateVoteByVersion(vote *proto.Vote) (*proto.Vote, error) {
 	db.logger.Log("method", "create_vote_by_version",
 		"username", vote.Username,
 		"upstream", vote.Upstream,
@@ -247,7 +247,7 @@ func (db *_database) DeleteVoteById(lawId, userId string) error {
 	return nil
 }
 
-func (db *_database) GetLawVoteSummary(upstream, ident, branch string, version uint32) (*apiv1.VoteSummary, error) {
+func (db *_database) GetLawVoteSummary(upstream, ident, branch string, version uint32) (*proto.VoteSummary, error) {
 	q := `
 	SELECT COUNT(votes.uid),
 		votes.value
@@ -274,7 +274,7 @@ func (db *_database) GetLawVoteSummary(upstream, ident, branch string, version u
 	}
 	defer rows.Close()
 
-	var resp apiv1.VoteSummary
+	var resp proto.VoteSummary
 	var c int32
 	var vote string
 	for rows.Next() {
@@ -344,7 +344,7 @@ func (db *_database) GetLawVoteSummary(upstream, ident, branch string, version u
 	return &resp, err
 }
 
-func (db *_database) GetUserVoteSummary(username string) (*apiv1.VoteSummary, error) {
+func (db *_database) GetUserVoteSummary(username string) (*proto.VoteSummary, error) {
 	q := `
 	SELECT COUNT(votes.uid),
 		votes.value
@@ -362,7 +362,7 @@ func (db *_database) GetUserVoteSummary(username string) (*apiv1.VoteSummary, er
 		return nil, err
 	}
 	defer rows.Close()
-	var resp apiv1.VoteSummary
+	var resp proto.VoteSummary
 	var c int32
 	var vote string
 	for rows.Next() {
@@ -386,7 +386,7 @@ func (db *_database) GetUserVoteSummary(username string) (*apiv1.VoteSummary, er
 	return &resp, err
 }
 
-func (db *_database) GetVoteByLatest(username, upstream, ident, branch string) (*apiv1.Vote, error) {
+func (db *_database) GetVoteByLatest(username, upstream, ident, branch string) (*proto.Vote, error) {
 	q := `
 	SELECT DISTINCT ON (
 		votes.uid,
@@ -422,14 +422,14 @@ func (db *_database) GetVoteByLatest(username, upstream, ident, branch string) (
 		users.full_name,
 		users.uid
 	`
-	v := &apiv1.Vote{
+	v := &proto.Vote{
 		Username: username,
 		Upstream: upstream,
 		Ident:    ident,
 		Branch:   branch,
 	}
 	var t time.Time
-	var u apiv1.User
+	var u proto.User
 	u.Username = username
 	err := db.conn.QueryRow(q, username, upstream, ident, branch).Scan(
 		&v.Uid,
@@ -455,7 +455,7 @@ func (db *_database) GetVoteByLatest(username, upstream, ident, branch string) (
 	return v, err
 }
 
-func (db *_database) GetVoteByVersion(username, upstream, ident, branch string, version uint32) (*apiv1.Vote, error) {
+func (db *_database) GetVoteByVersion(username, upstream, ident, branch string, version uint32) (*proto.Vote, error) {
 	q := `
 	SELECT votes.uid,
 		votes.version_id,
@@ -479,7 +479,7 @@ func (db *_database) GetVoteByVersion(username, upstream, ident, branch string, 
 		AND versions.number = $5
 		AND votes.deleted_at IS NULL
 	`
-	v := &apiv1.Vote{
+	v := &proto.Vote{
 		Username: username,
 		Upstream: upstream,
 		Ident:    ident,
@@ -487,7 +487,7 @@ func (db *_database) GetVoteByVersion(username, upstream, ident, branch string, 
 		Version:  version,
 	}
 	var t time.Time
-	var u apiv1.User
+	var u proto.User
 	u.Username = username
 	err := db.conn.QueryRow(q, username, upstream, ident, branch, version).Scan(
 		&v.Uid,
@@ -513,7 +513,7 @@ func (db *_database) GetVoteByVersion(username, upstream, ident, branch string, 
 	return v, err
 }
 
-func (db *_database) ListVersionVotes(upstream, ident, branch string, version, pageNum, pageSize uint32) ([]*apiv1.Vote, int32, error) {
+func (db *_database) ListVersionVotes(upstream, ident, branch string, version, pageNum, pageSize uint32) ([]*proto.Vote, int32, error) {
 	db.logger.Log("method", "list_version_votes",
 		"upstream", upstream,
 		"ident", ident,
@@ -557,12 +557,12 @@ func (db *_database) ListVersionVotes(upstream, ident, branch string, version, p
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var votes []*apiv1.Vote
+	var votes []*proto.Vote
 	var t time.Time
-	var u *apiv1.User
+	var u *proto.User
 	for rows.Next() {
-		u = new(apiv1.User)
-		v := &apiv1.Vote{
+		u = new(proto.User)
+		v := &proto.Vote{
 			Upstream: upstream,
 			Ident:    ident,
 			Branch:   branch,
@@ -594,7 +594,7 @@ func (db *_database) ListVersionVotes(upstream, ident, branch string, version, p
 	return votes, int32(len(votes)), err
 }
 
-func (db *_database) ListUserVotes(username string, pageNum, pageSize uint32) ([]*apiv1.Vote, int32, error) {
+func (db *_database) ListUserVotes(username string, pageNum, pageSize uint32) ([]*proto.Vote, int32, error) {
 	db.logger.Log("method", "list_user_votes", "username", username, "pageNum", pageNum, "pageSize", pageSize)
 	if pageNum < 0 {
 		return nil, 0, fmt.Errorf("bad pageNum: %v", pageNum)
@@ -610,10 +610,7 @@ func (db *_database) ListUserVotes(username string, pageNum, pageSize uint32) ([
 		laws.ident,
 		laws.short_title,
 		laws.title,
-		versions.tag_1,
-		versions.tag_2,
-		versions.tag_3,
-		versions.tag_4,
+		versions.tags,
 		versions.number,
 		COALESCE((
 			SELECT users.username
@@ -637,12 +634,12 @@ func (db *_database) ListUserVotes(username string, pageNum, pageSize uint32) ([
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var votes []*apiv1.Vote
+	var votes []*proto.Vote
 	var t time.Time
 	for rows.Next() {
-		v := new(apiv1.Vote)
+		v := new(proto.Vote)
 		l := makeLawSet()
-		u := new(apiv1.User)
+		u := new(proto.User)
 		v.User = u
 		v.Law = l
 		v.Username = username
@@ -654,10 +651,7 @@ func (db *_database) ListUserVotes(username string, pageNum, pageSize uint32) ([
 			&l.Law.Ident,
 			&l.Law.ShortTitle,
 			&l.Law.Title,
-			&l.Version.Tag_1,
-			&l.Version.Tag_2,
-			&l.Version.Tag_3,
-			&l.Version.Tag_4,
+			&l.Version.Tags,
 			&l.Version.Version,
 			&l.Branch.Name,
 		)
@@ -676,8 +670,8 @@ func (db *_database) ListUserVotes(username string, pageNum, pageSize uint32) ([
 	return votes, int32(len(votes)), nil
 }
 
-//func (db *_database) UpdateVoteByVersion(username, upstream, ident, branch string, version uint32, vote *apiv1.Vote) (v *apiv1.Vote, err error) {
-func (db *_database) UpdateVote(uid string, vote *apiv1.Vote) (v *apiv1.Vote, err error) {
+//func (db *_database) UpdateVoteByVersion(username, upstream, ident, branch string, version uint32, vote *proto.Vote) (v *proto.Vote, err error) {
+func (db *_database) UpdateVote(uid string, vote *proto.Vote) (v *proto.Vote, err error) {
 	voteValue, err := sanitizeVote(vote.Vote)
 	if err != nil {
 		return
@@ -763,15 +757,15 @@ func sanitizeVote(v string) (string, error) {
 	}
 }
 
-func copyVote(to, from *apiv1.Vote) {
+func copyVote(to, from *proto.Vote) {
 	if from.LawId != "" {
-		to.LawId = to.LawId
+		to.LawId = from.LawId
 	}
 	if from.UserId != "" {
-		to.UserId = to.UserId
+		to.UserId = from.UserId
 	}
 	if from.Vote != "" {
-		to.Vote = to.Vote
+		to.Vote = from.Vote
 	}
 	if from.Comment != "" {
 		to.Comment = from.Comment

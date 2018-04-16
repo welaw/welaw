@@ -5,12 +5,12 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
+	"github.com/welaw/welaw/proto"
 	"github.com/welaw/welaw/services"
 )
 
-func (e Endpoints) LoggedInCheck(ctx context.Context) (*apiv1.User, error) {
+func (e Endpoints) LoggedInCheck(ctx context.Context) (*proto.User, error) {
 	resp, err := e.LoggedInCheckEndpoint(ctx, LoggedInCheckRequest{})
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (e Endpoints) LoginCallback(ctx context.Context, state, code string) (*http
 	return r.Cookie, r.LoginCookie, r.Url, r.Err
 }
 
-func (e Endpoints) LoginAs(ctx context.Context, user *apiv1.User) error {
+func (e Endpoints) LoginAs(ctx context.Context, user *proto.User) error {
 	resp, err := e.LoginAsEndpoint(ctx, LoginAsRequest{User: user})
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func MakeLogoutEndpoint(svc services.Service) endpoint.Endpoint {
 type LoggedInCheckRequest struct{}
 
 type LoggedInCheckResponse struct {
-	User *apiv1.User `json:"user"`
+	User *proto.User `json:"user"`
 	Err  error       `json:"-"`
 }
 
@@ -138,7 +138,7 @@ type LoginCallbackResponse struct {
 func (r LoginCallbackResponse) Failed() error { return r.Err }
 
 type LoginAsRequest struct {
-	User *apiv1.User `json:"user"`
+	User *proto.User `json:"user"`
 }
 
 type LoginAsResponse struct {

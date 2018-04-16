@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
+	"github.com/welaw/welaw/proto"
 )
 
-func (db *_database) CreateUpstream(u *apiv1.Upstream) (err error) {
+func (db *_database) CreateUpstream(u *proto.Upstream) (err error) {
 	create := `
 	INSERT INTO upstreams (
 		ident,
@@ -42,7 +42,7 @@ func (db *_database) CreateUpstream(u *apiv1.Upstream) (err error) {
 	return nil
 }
 
-func (db *_database) GetUpstream(ident string) (*apiv1.Upstream, error) {
+func (db *_database) GetUpstream(ident string) (*proto.Upstream, error) {
 	q := `
 	SELECT upstreams.uid,
 		upstreams.upstream_name,
@@ -78,7 +78,7 @@ func (db *_database) GetUpstream(ident string) (*apiv1.Upstream, error) {
 		AND upstreams.deleted_at IS NULL
 	`
 	var raw []byte
-	var u apiv1.Upstream
+	var u proto.Upstream
 	u.Ident = ident
 	err := db.conn.QueryRow(
 		q,
@@ -102,7 +102,7 @@ func (db *_database) GetUpstream(ident string) (*apiv1.Upstream, error) {
 	case err != nil:
 		return nil, err
 	}
-	var md apiv1.UpstreamMetadata
+	var md proto.UpstreamMetadata
 	err = json.Unmarshal(raw, &md)
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (db *_database) GetUpstream(ident string) (*apiv1.Upstream, error) {
 	return &u, nil
 }
 
-func (db *_database) ListUpstreams() (us []*apiv1.Upstream, err error) {
+func (db *_database) ListUpstreams() (us []*proto.Upstream, err error) {
 	q := `
 	SELECT ident,
 		upstream_name,
@@ -148,7 +148,7 @@ func (db *_database) ListUpstreams() (us []*apiv1.Upstream, err error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		u := new(apiv1.Upstream)
+		u := new(proto.Upstream)
 		err = rows.Scan(
 			&u.Ident,
 			&u.UpstreamName,
@@ -168,42 +168,42 @@ func (db *_database) ListUpstreams() (us []*apiv1.Upstream, err error) {
 	return
 }
 
-func (db *_database) ListUpstreamTags(upstream string) (tags []*apiv1.LawTag, err error) {
-	q := `
-	SELECT upstream_tags.ident,
-		upstream_tags.name,
-		upstream_tags.description,
-		upstream_tags.ranking,
-		upstream_tags.number_type
-	FROM upstream_tags
-	INNER JOIN upstreams ON upstreams.uid = upstream_tags.upstream_id AND upstreams.deleted_at IS NULL
-	WHERE upstreams.ident = $1
-		AND upstream_tags.deleted_at IS NULL
-	`
-	rows, err := db.conn.Query(q, upstream)
-	if err != nil {
-		return
-	}
-	defer rows.Close()
-	for rows.Next() {
-		t := new(apiv1.LawTag)
-		err = rows.Scan(
-			&t.Ident,
-			&t.Name,
-			&t.Description,
-			&t.Ranking,
-			&t.NumberType,
-		)
-		if err != nil {
-			return
-		}
-		tags = append(tags, t)
-	}
-	err = rows.Err()
-	return
-}
+//func (db *_database) ListUpstreamTags(upstream string) (tags []*proto.LawTag, err error) {
+//q := `
+//SELECT upstream_tags.ident,
+//upstream_tags.name,
+//upstream_tags.description,
+//upstream_tags.ranking,
+//upstream_tags.number_type
+//FROM upstream_tags
+//INNER JOIN upstreams ON upstreams.uid = upstream_tags.upstream_id AND upstreams.deleted_at IS NULL
+//WHERE upstreams.ident = $1
+//AND upstream_tags.deleted_at IS NULL
+//`
+//rows, err := db.conn.Query(q, upstream)
+//if err != nil {
+//return
+//}
+//defer rows.Close()
+//for rows.Next() {
+//t := new(proto.LawTag)
+//err = rows.Scan(
+//&t.Ident,
+//&t.Name,
+//&t.Description,
+//&t.Ranking,
+//&t.NumberType,
+//)
+//if err != nil {
+//return
+//}
+//tags = append(tags, t)
+//}
+//err = rows.Err()
+//return
+//}
 
-func (db *_database) UpdateUpstream(upstream *apiv1.Upstream) (err error) {
+func (db *_database) UpdateUpstream(upstream *proto.Upstream) (err error) {
 	// get current
 	u, err := db.GetUpstream(upstream.UpstreamName)
 	if err != nil {
@@ -279,7 +279,7 @@ func (db *_database) UpdateUpstream(upstream *apiv1.Upstream) (err error) {
 	return
 }
 
-func copyUpstream(from, to *apiv1.Upstream) {
+func copyUpstream(from, to *proto.Upstream) {
 	if from.Ident != "" {
 		to.Ident = from.Ident
 	}

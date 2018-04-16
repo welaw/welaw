@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 	"github.com/welaw/welaw/services"
 )
 
-func (e Endpoints) CreateUser(ctx context.Context, newUser *apiv1.User) (*apiv1.User, error) {
+func (e Endpoints) CreateUser(ctx context.Context, newUser *proto.User) (*proto.User, error) {
 	req := CreateUserRequest{User: newUser}
 	resp, err := e.CreateUserEndpoint(ctx, req)
 	if err != nil {
@@ -18,7 +18,7 @@ func (e Endpoints) CreateUser(ctx context.Context, newUser *apiv1.User) (*apiv1.
 	return r.User, r.Err
 }
 
-func (e Endpoints) CreateUsers(ctx context.Context, users []*apiv1.User) ([]*apiv1.User, error) {
+func (e Endpoints) CreateUsers(ctx context.Context, users []*proto.User) ([]*proto.User, error) {
 	req := CreateUsersRequest{Users: users}
 	resp, err := e.CreateUsersEndpoint(ctx, req)
 	if err != nil {
@@ -37,7 +37,7 @@ func (e Endpoints) DeleteUser(ctx context.Context, username string) error {
 	return r.(DeleteUserResponse).Err
 }
 
-func (e Endpoints) GetUser(ctx context.Context, opts *apiv1.GetUserOptions) (*apiv1.User, error) {
+func (e Endpoints) GetUser(ctx context.Context, opts *proto.GetUserOptions) (*proto.User, error) {
 	req := GetUserRequest{opts}
 	resp, err := e.GetUserEndpoint(ctx, req)
 	if err != nil {
@@ -47,7 +47,7 @@ func (e Endpoints) GetUser(ctx context.Context, opts *apiv1.GetUserOptions) (*ap
 	return r.User, r.Err
 }
 
-func (e Endpoints) ListUsers(ctx context.Context, opts *apiv1.ListUsersOptions) ([]*apiv1.User, int, error) {
+func (e Endpoints) ListUsers(ctx context.Context, opts *proto.ListUsersOptions) ([]*proto.User, int, error) {
 	req := ListUsersRequest{Opts: opts}
 	resp, err := e.ListUsersEndpoint(ctx, req)
 	if err != nil {
@@ -57,7 +57,7 @@ func (e Endpoints) ListUsers(ctx context.Context, opts *apiv1.ListUsersOptions) 
 	return r.Users, r.Total, r.Err
 }
 
-func (e Endpoints) UpdateUser(ctx context.Context, username string, opts *apiv1.UpdateUserOptions) (*apiv1.User, error) {
+func (e Endpoints) UpdateUser(ctx context.Context, username string, opts *proto.UpdateUserOptions) (*proto.User, error) {
 	request := UpdateUserRequest{Username: username, Opts: opts}
 	response, err := e.UpdateUserEndpoint(ctx, request)
 	if err != nil {
@@ -67,7 +67,7 @@ func (e Endpoints) UpdateUser(ctx context.Context, username string, opts *apiv1.
 	return r.User, r.Err
 }
 
-func (e Endpoints) UploadAvatar(ctx context.Context, opts *apiv1.UploadAvatarOptions) error {
+func (e Endpoints) UploadAvatar(ctx context.Context, opts *proto.UploadAvatarOptions) error {
 	request := UploadAvatarRequest{Opts: opts}
 	response, err := e.UploadAvatarEndpoint(ctx, request)
 	if err != nil {
@@ -140,22 +140,22 @@ func MakeUploadAvatarEndpoint(svc services.Service) endpoint.Endpoint {
 }
 
 type CreateUserRequest struct {
-	User *apiv1.User `json:"user"`
+	User *proto.User `json:"user"`
 }
 
 type CreateUserResponse struct {
-	User *apiv1.User `json:"user"`
+	User *proto.User `json:"user"`
 	Err  error       `json:"-"`
 }
 
 func (r CreateUserResponse) Failed() error { return r.Err }
 
 type CreateUsersRequest struct {
-	Users []*apiv1.User `json:"suser"`
+	Users []*proto.User `json:"suser"`
 }
 
 type CreateUsersResponse struct {
-	Users []*apiv1.User `json:"users"`
+	Users []*proto.User `json:"users"`
 	Err   error         `json:"-"`
 }
 
@@ -172,23 +172,23 @@ type DeleteUserResponse struct {
 func (r DeleteUserResponse) Failed() error { return r.Err }
 
 type GetUserRequest struct {
-	Opts *apiv1.GetUserOptions `json:"opts"`
+	Opts *proto.GetUserOptions `json:"opts"`
 }
 
 type GetUserResponse struct {
-	//GetUserReply *apiv1.GetUserReply `json:"reply"`
-	User *apiv1.User `json:"user"`
+	//GetUserReply *proto.GetUserReply `json:"reply"`
+	User *proto.User `json:"user"`
 	Err  error       `json:"-"`
 }
 
 func (r GetUserResponse) Failed() error { return r.Err }
 
 type ListUsersRequest struct {
-	Opts *apiv1.ListUsersOptions `json:"opts"`
+	Opts *proto.ListUsersOptions `json:"opts"`
 }
 
 type ListUsersResponse struct {
-	Users []*apiv1.User `json:"users"`
+	Users []*proto.User `json:"users"`
 	Total int           `json:"total"`
 	Err   error         `json:"-"`
 }
@@ -196,20 +196,20 @@ type ListUsersResponse struct {
 func (r ListUsersResponse) Failed() error { return r.Err }
 
 type UpdateUserRequest struct {
-	//User *apiv1.User              `json:"user"`
+	//User *proto.User              `json:"user"`
 	Username string                   `json:"username"`
-	Opts     *apiv1.UpdateUserOptions `json:"opts"`
+	Opts     *proto.UpdateUserOptions `json:"opts"`
 }
 
 type UpdateUserResponse struct {
-	User *apiv1.User `json:"user"`
+	User *proto.User `json:"user"`
 	Err  error       `json:"-"`
 }
 
 func (r UpdateUserResponse) Failed() error { return r.Err }
 
 type UploadAvatarRequest struct {
-	Opts *apiv1.UploadAvatarOptions `json:"opts"`
+	Opts *proto.UploadAvatarOptions `json:"opts"`
 }
 
 type UploadAvatarResponse struct {

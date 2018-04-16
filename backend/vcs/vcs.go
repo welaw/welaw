@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/golang/protobuf/ptypes"
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/easyrepo"
+	"github.com/welaw/welaw/proto"
 	//git "gopkg.in/libgit2/git2go.v26"
 	git "gopkg.in/libgit2/git2go.v25"
 	//git "github.com/libgit2/git2go"
@@ -17,13 +17,13 @@ const (
 )
 
 type VCS interface {
-	CreateLaw(*apiv1.LawSet) (hash string, err error)
-	CreateBranch(string, *apiv1.LawSet) (string, error)
-	CreateVersion(*apiv1.LawSet, string) (string, error)
+	CreateLaw(*proto.LawSet) (hash string, err error)
+	CreateBranch(string, *proto.LawSet) (string, error)
+	CreateVersion(*proto.LawSet, string) (string, error)
 	DeleteBranch(upstream, ident, branch string) error
 	DeleteLaw(upstream, ident string) error
 	DiffVersions(upstream, ident, ours, theirs string) (string, error)
-	GetBranchHead(*apiv1.LawSet) (*easyrepo.Commit, error)
+	GetBranchHead(*proto.LawSet) (*easyrepo.Commit, error)
 	GetVersion(upstream, ident, hash string) (*easyrepo.Commit, error)
 	//AcceptChanges(upstream, ident, branch, target string) (string, error)
 	RepoPath(upstream, ident string) string
@@ -51,7 +51,7 @@ func (vc *vcs) RepoPath(upstream, ident string) string {
 	return filepath.Join(vc.path, upstream, ident)
 }
 
-func (vc *vcs) CreateLaw(set *apiv1.LawSet) (string, error) {
+func (vc *vcs) CreateLaw(set *proto.LawSet) (string, error) {
 	path := vc.RepoPath(set.Law.Upstream, set.Law.Ident)
 	repo, err := easyrepo.CreateRepo(path)
 	if err != nil {
@@ -82,7 +82,7 @@ func (vc *vcs) CreateLaw(set *apiv1.LawSet) (string, error) {
 	return c1.String(), nil
 }
 
-func (vc *vcs) CreateBranch(parent string, set *apiv1.LawSet) (string, error) {
+func (vc *vcs) CreateBranch(parent string, set *proto.LawSet) (string, error) {
 	path := vc.RepoPath(set.Law.Upstream, set.Law.Ident)
 	repo, err := easyrepo.OpenRepo(path)
 	if err != nil {
@@ -95,7 +95,7 @@ func (vc *vcs) CreateBranch(parent string, set *apiv1.LawSet) (string, error) {
 	return "", nil
 }
 
-func (vc *vcs) CreateVersion(set *apiv1.LawSet, parent string) (string, error) {
+func (vc *vcs) CreateVersion(set *proto.LawSet, parent string) (string, error) {
 	vc.logger.Log("method", "create_version", "ident", set.Law.Ident, "version", set.Version.Version, "parent", parent)
 
 	path := vc.RepoPath(set.Law.Upstream, set.Law.Ident)
@@ -154,12 +154,12 @@ func (vc *vcs) DiffVersions(upstream, ident, ours, theirs string) (string, error
 	return resp.Body, nil
 }
 
-func (vc *vcs) GetBranchHead(lb *apiv1.LawSet) (*easyrepo.Commit, error) {
+func (vc *vcs) GetBranchHead(lb *proto.LawSet) (*easyrepo.Commit, error) {
 	return nil, nil
 }
 
 func (vc *vcs) GetVersion(upstream, ident, hash string) (*easyrepo.Commit, error) {
-	vc.logger.Log("method", "GetVersion",
+	vc.logger.Log("method", "get_version",
 		"upstream", upstream,
 		"ident", ident,
 		"hash", hash,

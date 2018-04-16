@@ -6,61 +6,61 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/securecookie"
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/backend/database"
 	"github.com/welaw/welaw/backend/filesystem"
 	"github.com/welaw/welaw/backend/vcs"
 	"github.com/welaw/welaw/pkg/oauth"
+	"github.com/welaw/welaw/proto"
 )
 
 type Service interface {
 	// admin
-	GetServerStats(context.Context) (*apiv1.ServerStats, error)
-	LoadRepos(context.Context, *apiv1.LoadReposOptions) (*apiv1.LoadReposReply, error)
-	SaveRepos(context.Context, *apiv1.SaveReposOptions) (*apiv1.SaveReposReply, error)
+	GetServerStats(context.Context) (*proto.ServerStats, error)
+	LoadRepos(context.Context, *proto.LoadReposOptions) (*proto.LoadReposReply, error)
+	SaveRepos(context.Context, *proto.SaveReposOptions) (*proto.SaveReposReply, error)
 	// auth
-	LoggedInCheck(context.Context) (*apiv1.User, error)
+	LoggedInCheck(context.Context) (*proto.User, error)
 	Login(ctx context.Context, returnURL, provider string) (*http.Cookie, string, error)
 	LoginCallback(ctx context.Context, code, state string) (*http.Cookie, *http.Cookie, string, error)
-	LoginAs(context.Context, *apiv1.User) error
+	LoginAs(context.Context, *proto.User) error
 	Logout(context.Context) error
 	// ballot
-	CreateVote(context.Context, *apiv1.Vote, *apiv1.CreateVoteOptions) (*apiv1.Vote, error)
-	CreateVotes(context.Context, []*apiv1.Vote, *apiv1.CreateVotesOptions) ([]*apiv1.Vote, error)
-	DeleteVote(ctx context.Context, upstream, ident string, opts *apiv1.DeleteVoteOptions) error
-	GetVote(ctx context.Context, upstream, ident string, opts *apiv1.GetVoteOptions) (*apiv1.Vote, error)
-	ListVotes(context.Context, *apiv1.ListVotesOptions) (*apiv1.ListVotesReply, error)
-	UpdateVote(context.Context, *apiv1.Vote, *apiv1.UpdateVoteOptions) (*apiv1.Vote, error)
+	CreateVote(context.Context, *proto.Vote, *proto.CreateVoteOptions) (*proto.Vote, error)
+	CreateVotes(context.Context, []*proto.Vote, *proto.CreateVotesOptions) ([]*proto.Vote, error)
+	DeleteVote(ctx context.Context, upstream, ident string, opts *proto.DeleteVoteOptions) error
+	GetVote(ctx context.Context, upstream, ident string, opts *proto.GetVoteOptions) (*proto.Vote, error)
+	ListVotes(context.Context, *proto.ListVotesOptions) (*proto.ListVotesReply, error)
+	UpdateVote(context.Context, *proto.Vote, *proto.UpdateVoteOptions) (*proto.Vote, error)
 	// law
-	CreateAnnotation(context.Context, *apiv1.Annotation) (string, error)
+	CreateAnnotation(context.Context, *proto.Annotation) (string, error)
 	DeleteAnnotation(context.Context, string) error
-	ListAnnotations(context.Context, *apiv1.ListAnnotationsOptions) ([]*apiv1.Annotation, int, error)
-	ListComments(context.Context, *apiv1.ListCommentsOptions) ([]*apiv1.Comment, int, error)
-	CreateComment(context.Context, *apiv1.Comment) (*apiv1.Comment, error)
+	ListAnnotations(context.Context, *proto.ListAnnotationsOptions) ([]*proto.Annotation, int, error)
+	ListComments(context.Context, *proto.ListCommentsOptions) ([]*proto.Comment, int, error)
+	CreateComment(context.Context, *proto.Comment) (*proto.Comment, error)
 	DeleteComment(context.Context, string) error
-	GetComment(ctx context.Context, opts *apiv1.GetCommentOptions) (*apiv1.Comment, error)
-	UpdateComment(context.Context, *apiv1.Comment) (*apiv1.Comment, error)
-	LikeComment(context.Context, *apiv1.LikeCommentOptions) error
-	CreateLaw(context.Context, *apiv1.LawSet, *apiv1.CreateLawOptions) (*apiv1.CreateLawReply, error)
-	CreateLaws(context.Context, []*apiv1.LawSet, *apiv1.CreateLawsOptions) ([]*apiv1.LawSet, error)
-	DeleteLaw(ctx context.Context, upstream, ident string, opts *apiv1.DeleteLawOptions) error
-	DiffLaws(ctx context.Context, upstream, ident string, opts *apiv1.DiffLawsOptions) (*apiv1.DiffLawsReply, error)
-	GetLaw(ctx context.Context, upstream, ident string, opts *apiv1.GetLawOptions) (*apiv1.GetLawReply, error)
-	ListLaws(context.Context, *apiv1.ListLawsOptions) (*apiv1.ListLawsReply, error)
-	UpdateLaw(context.Context, *apiv1.LawSet, *apiv1.UpdateLawOptions) error
+	GetComment(ctx context.Context, opts *proto.GetCommentOptions) (*proto.Comment, error)
+	UpdateComment(context.Context, *proto.Comment) (*proto.Comment, error)
+	LikeComment(context.Context, *proto.LikeCommentOptions) error
+	CreateLaw(context.Context, *proto.LawSet, *proto.CreateLawOptions) (*proto.CreateLawReply, error)
+	CreateLaws(context.Context, []*proto.LawSet, *proto.CreateLawsOptions) ([]*proto.LawSet, error)
+	DeleteLaw(ctx context.Context, upstream, ident string, opts *proto.DeleteLawOptions) error
+	DiffLaws(ctx context.Context, upstream, ident string, opts *proto.DiffLawsOptions) (*proto.DiffLawsReply, error)
+	GetLaw(ctx context.Context, upstream, ident string, opts *proto.GetLawOptions) (*proto.GetLawReply, error)
+	ListLaws(context.Context, *proto.ListLawsOptions) (*proto.ListLawsReply, error)
+	UpdateLaw(context.Context, *proto.LawSet, *proto.UpdateLawOptions) error
 	// upstreams
-	CreateUpstream(context.Context, *apiv1.Upstream) error
-	GetUpstream(context.Context, string) (*apiv1.Upstream, error)
-	ListUpstreams(context.Context) ([]*apiv1.Upstream, error)
-	UpdateUpstream(context.Context, *apiv1.Upstream) error
+	CreateUpstream(context.Context, *proto.Upstream) error
+	GetUpstream(context.Context, string) (*proto.Upstream, error)
+	ListUpstreams(context.Context) ([]*proto.Upstream, error)
+	UpdateUpstream(context.Context, *proto.Upstream) error
 	// users
-	CreateUser(context.Context, *apiv1.User) (*apiv1.User, error)
-	CreateUsers(context.Context, []*apiv1.User) ([]*apiv1.User, error)
+	CreateUser(context.Context, *proto.User) (*proto.User, error)
+	CreateUsers(context.Context, []*proto.User) ([]*proto.User, error)
 	DeleteUser(context.Context, string) error
-	GetUser(context.Context, *apiv1.GetUserOptions) (*apiv1.User, error)
-	ListUsers(context.Context, *apiv1.ListUsersOptions) ([]*apiv1.User, int, error)
-	UpdateUser(context.Context, string, *apiv1.UpdateUserOptions) (*apiv1.User, error)
-	UploadAvatar(ctx context.Context, opts *apiv1.UploadAvatarOptions) error
+	GetUser(context.Context, *proto.GetUserOptions) (*proto.User, error)
+	ListUsers(context.Context, *proto.ListUsersOptions) ([]*proto.User, int, error)
+	UpdateUser(context.Context, string, *proto.UpdateUserOptions) (*proto.User, error)
+	UploadAvatar(ctx context.Context, opts *proto.UploadAvatarOptions) error
 }
 
 //const (

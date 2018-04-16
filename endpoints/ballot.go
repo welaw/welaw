@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 	"github.com/welaw/welaw/services"
 )
 
-func (e Endpoints) CreateVote(ctx context.Context, vote *apiv1.Vote, opts *apiv1.CreateVoteOptions) (*apiv1.Vote, error) {
+func (e Endpoints) CreateVote(ctx context.Context, vote *proto.Vote, opts *proto.CreateVoteOptions) (*proto.Vote, error) {
 	req := CreateVoteRequest{
 		Vote: vote,
 		Opts: opts,
@@ -21,7 +21,7 @@ func (e Endpoints) CreateVote(ctx context.Context, vote *apiv1.Vote, opts *apiv1
 	return r.Vote, r.Err
 }
 
-func (e Endpoints) CreateVotes(ctx context.Context, votes []*apiv1.Vote, opts *apiv1.CreateVotesOptions) ([]*apiv1.Vote, error) {
+func (e Endpoints) CreateVotes(ctx context.Context, votes []*proto.Vote, opts *proto.CreateVotesOptions) ([]*proto.Vote, error) {
 	req := CreateVotesRequest{
 		Votes: votes,
 		Opts:  opts,
@@ -34,7 +34,7 @@ func (e Endpoints) CreateVotes(ctx context.Context, votes []*apiv1.Vote, opts *a
 	return r.Votes, r.Err
 }
 
-func (e Endpoints) GetVote(ctx context.Context, upstream, ident string, opts *apiv1.GetVoteOptions) (*apiv1.Vote, error) {
+func (e Endpoints) GetVote(ctx context.Context, upstream, ident string, opts *proto.GetVoteOptions) (*proto.Vote, error) {
 	req := GetVoteRequest{
 		Upstream: upstream,
 		Ident:    ident,
@@ -48,7 +48,7 @@ func (e Endpoints) GetVote(ctx context.Context, upstream, ident string, opts *ap
 	return r.Vote, r.Err
 }
 
-func (e Endpoints) DeleteVote(ctx context.Context, upstream, ident string, opts *apiv1.DeleteVoteOptions) error {
+func (e Endpoints) DeleteVote(ctx context.Context, upstream, ident string, opts *proto.DeleteVoteOptions) error {
 	req := DeleteVoteRequest{
 		Upstream: upstream,
 		Ident:    ident,
@@ -62,20 +62,20 @@ func (e Endpoints) DeleteVote(ctx context.Context, upstream, ident string, opts 
 	return r.Err
 }
 
-func (e Endpoints) ListVotes(ctx context.Context, opts *apiv1.ListVotesOptions) (*apiv1.ListVotesReply, error) {
+func (e Endpoints) ListVotes(ctx context.Context, opts *proto.ListVotesOptions) (*proto.ListVotesReply, error) {
 	req := ListVotesRequest{Opts: opts}
 	resp, err := e.ListVotesEndpoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	r := resp.(ListVotesResponse)
-	return &apiv1.ListVotesReply{
+	return &proto.ListVotesReply{
 		Votes: r.Votes,
 		Total: r.Total,
 	}, r.Err
 }
 
-func (e Endpoints) UpdateVote(ctx context.Context, v *apiv1.Vote, opts *apiv1.UpdateVoteOptions) (*apiv1.Vote, error) {
+func (e Endpoints) UpdateVote(ctx context.Context, v *proto.Vote, opts *proto.UpdateVoteOptions) (*proto.Vote, error) {
 	req := UpdateVoteRequest{
 		Vote: v,
 		Opts: opts,
@@ -154,36 +154,36 @@ func MakeUpdateVoteEndpoint(svc services.Service) endpoint.Endpoint {
 }
 
 type CreateVoteRequest struct {
-	Vote *apiv1.Vote              `json:"vote"`
-	Opts *apiv1.CreateVoteOptions `json:"opts"`
+	Vote *proto.Vote              `json:"vote"`
+	Opts *proto.CreateVoteOptions `json:"opts"`
 }
 
 type CreateVoteResponse struct {
-	Vote *apiv1.Vote `json:"vote"`
+	Vote *proto.Vote `json:"vote"`
 	Err  error       `json:"-"`
 }
 
 func (r CreateVoteResponse) Failed() error { return r.Err }
 
 type CreateVotesRequest struct {
-	Votes []*apiv1.Vote             `json:"votes"`
-	Opts  *apiv1.CreateVotesOptions `json:"opts"`
+	Votes []*proto.Vote             `json:"votes"`
+	Opts  *proto.CreateVotesOptions `json:"opts"`
 }
 
 type CreateVotesResponse struct {
-	Votes []*apiv1.Vote `json:"votes"`
+	Votes []*proto.Vote `json:"votes"`
 	Err   error         `json:"-"`
 }
 
 func (r CreateVotesResponse) Failed() error { return r.Err }
 
 type UpdateVoteRequest struct {
-	Vote *apiv1.Vote              `json:"vote"`
-	Opts *apiv1.UpdateVoteOptions `json:"opts"`
+	Vote *proto.Vote              `json:"vote"`
+	Opts *proto.UpdateVoteOptions `json:"opts"`
 }
 
 type UpdateVoteResponse struct {
-	Vote *apiv1.Vote `json:"vote"`
+	Vote *proto.Vote `json:"vote"`
 	Err  error       `json"-"`
 }
 
@@ -192,11 +192,11 @@ func (r UpdateVoteResponse) Failed() error { return r.Err }
 type GetVoteRequest struct {
 	Upstream string                `json:"upstream"`
 	Ident    string                `json:"ident"`
-	Opts     *apiv1.GetVoteOptions `json:"opts"`
+	Opts     *proto.GetVoteOptions `json:"opts"`
 }
 
 type GetVoteResponse struct {
-	Vote *apiv1.Vote `json:"vote"`
+	Vote *proto.Vote `json:"vote"`
 	Err  error       `json:"-"`
 }
 
@@ -205,7 +205,7 @@ func (r GetVoteResponse) Failed() error { return r.Err }
 type DeleteVoteRequest struct {
 	Upstream string                   `json:"upstream"`
 	Ident    string                   `json:"ident"`
-	Opts     *apiv1.DeleteVoteOptions `json:"opts"`
+	Opts     *proto.DeleteVoteOptions `json:"opts"`
 }
 
 type DeleteVoteResponse struct {
@@ -215,11 +215,11 @@ type DeleteVoteResponse struct {
 func (r DeleteVoteResponse) Failed() error { return r.Err }
 
 type ListVotesRequest struct {
-	Opts *apiv1.ListVotesOptions `json:"opts"`
+	Opts *proto.ListVotesOptions `json:"opts"`
 }
 
 type ListVotesResponse struct {
-	Votes []*apiv1.Vote `json:"votes"`
+	Votes []*proto.Vote `json:"votes"`
 	Total int32         `json:"total"`
 	Err   error         `json:"-"`
 }

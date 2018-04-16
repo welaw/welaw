@@ -48,6 +48,7 @@ INSERT INTO role_operations (role_id, operation_id)
     ((SELECT uid FROM roles WHERE name = 'upstream-admin'), (SELECT uid FROM operations WHERE name = 'law_create')),
     ((SELECT uid FROM roles WHERE name = 'upstream-admin'), (SELECT uid FROM operations WHERE name = 'laws_create')),
     ((SELECT uid FROM roles WHERE name = 'upstream-admin'), (SELECT uid FROM operations WHERE name = 'user_create')),
+    ((SELECT uid FROM roles WHERE name = 'upstream-admin'), (SELECT uid FROM operations WHERE name = 'user_update')),
     ((SELECT uid FROM roles WHERE name = 'upstream-admin'), (SELECT uid FROM operations WHERE name = 'upstream_view')),
     ((SELECT uid FROM roles WHERE name = 'upstream-admin'), (SELECT uid FROM operations WHERE name = 'upstream_update')),
     ((SELECT uid FROM roles WHERE name = 'upstream-admin'), (SELECT uid FROM operations WHERE name = 'votes_create'));

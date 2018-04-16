@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw loggingMiddleware) CreateUser(ctx context.Context, user *apiv1.User) (u *apiv1.User, err error) {
+func (mw loggingMiddleware) CreateUser(ctx context.Context, user *proto.User) (u *proto.User, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "create_user",
@@ -22,7 +22,7 @@ func (mw loggingMiddleware) CreateUser(ctx context.Context, user *apiv1.User) (u
 	return
 }
 
-func (mw loggingMiddleware) CreateUsers(ctx context.Context, users []*apiv1.User) (u []*apiv1.User, err error) {
+func (mw loggingMiddleware) CreateUsers(ctx context.Context, users []*proto.User) (u []*proto.User, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "create_users",
@@ -49,7 +49,7 @@ func (mw loggingMiddleware) DeleteUser(ctx context.Context, username string) (er
 	return
 }
 
-func (mw loggingMiddleware) GetUser(ctx context.Context, opts *apiv1.GetUserOptions) (user *apiv1.User, err error) {
+func (mw loggingMiddleware) GetUser(ctx context.Context, opts *proto.GetUserOptions) (user *proto.User, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "get_user",
@@ -63,7 +63,7 @@ func (mw loggingMiddleware) GetUser(ctx context.Context, opts *apiv1.GetUserOpti
 	return
 }
 
-func (mw loggingMiddleware) ListUsers(ctx context.Context, opts *apiv1.ListUsersOptions) (users []*apiv1.User, total int, err error) {
+func (mw loggingMiddleware) ListUsers(ctx context.Context, opts *proto.ListUsersOptions) (users []*proto.User, total int, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "list_users",
@@ -78,7 +78,7 @@ func (mw loggingMiddleware) ListUsers(ctx context.Context, opts *apiv1.ListUsers
 	return
 }
 
-func (mw loggingMiddleware) UpdateUser(ctx context.Context, username string, opts *apiv1.UpdateUserOptions) (u *apiv1.User, err error) {
+func (mw loggingMiddleware) UpdateUser(ctx context.Context, username string, opts *proto.UpdateUserOptions) (u *proto.User, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "update_user",
@@ -93,7 +93,7 @@ func (mw loggingMiddleware) UpdateUser(ctx context.Context, username string, opt
 	return
 }
 
-func (mw loggingMiddleware) UploadAvatar(ctx context.Context, opts *apiv1.UploadAvatarOptions) (err error) {
+func (mw loggingMiddleware) UploadAvatar(ctx context.Context, opts *proto.UploadAvatarOptions) (err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "upload_avatar",

@@ -153,7 +153,6 @@ func main() {
 			providers,
 			sc,
 			opts,
-			//services.ServerLoading,
 		)
 		service = logging.NewLoggingMiddleware(logger, service)
 		service = instrumentation.NewInstrumentatingMiddleware(

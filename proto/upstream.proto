@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-import "api/v1/law.proto";
-import "api/v1/user.proto";
+import "proto/law.proto";
+import "proto/user.proto";
 
-package grpc.welaw.v1;
+package proto;
 
 message Upstream {
     string ident = 1;
@@ -15,11 +15,11 @@ message Upstream {
 	string email = 7;
     string default_user = 8;
     string geo_coords = 9;
-    repeated LawTag tags = 10;
-    int32 laws = 11;
-    int32 users = 12;
-    UpstreamMetadata metadata = 13;
-    string uid = 14;
+    int32 laws = 10;
+    int32 users = 11;
+    UpstreamMetadata metadata = 12;
+    string uid = 13;
+    string user_id = 14;
 }
 
 message UpstreamMetadata {

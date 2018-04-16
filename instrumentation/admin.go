@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw instrumentatingMiddleware) GetServerStats(ctx context.Context) (stats *apiv1.ServerStats, err error) {
+func (mw instrumentatingMiddleware) GetServerStats(ctx context.Context) (stats *proto.ServerStats, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "get_server_stats", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -19,7 +19,7 @@ func (mw instrumentatingMiddleware) GetServerStats(ctx context.Context) (stats *
 	return
 }
 
-func (mw instrumentatingMiddleware) LoadRepos(ctx context.Context, opts *apiv1.LoadReposOptions) (r *apiv1.LoadReposReply, err error) {
+func (mw instrumentatingMiddleware) LoadRepos(ctx context.Context, opts *proto.LoadReposOptions) (r *proto.LoadReposReply, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "load_repos", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -30,7 +30,7 @@ func (mw instrumentatingMiddleware) LoadRepos(ctx context.Context, opts *apiv1.L
 	return
 }
 
-func (mw instrumentatingMiddleware) SaveRepos(ctx context.Context, opts *apiv1.SaveReposOptions) (r *apiv1.SaveReposReply, err error) {
+func (mw instrumentatingMiddleware) SaveRepos(ctx context.Context, opts *proto.SaveReposOptions) (r *proto.SaveReposReply, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "save_repos", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)

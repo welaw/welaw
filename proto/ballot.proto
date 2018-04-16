@@ -1,10 +1,10 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
-import "api/v1/law.proto";
-import "api/v1/user.proto";
+import "proto/law.proto";
+import "proto/user.proto";
 
-package grpc.welaw.v1;
+package proto;
 
 enum VoteValue {
     YES = 0;

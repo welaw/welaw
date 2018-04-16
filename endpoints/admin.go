@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 	"github.com/welaw/welaw/services"
 )
 
-func (e Endpoints) GetServerStats(ctx context.Context) (*apiv1.ServerStats, error) {
+func (e Endpoints) GetServerStats(ctx context.Context) (*proto.ServerStats, error) {
 	resp, err := e.GetServerStatsEndpoint(ctx, GetServerStatsRequest{})
 	if err != nil {
 		return nil, err
@@ -17,7 +17,7 @@ func (e Endpoints) GetServerStats(ctx context.Context) (*apiv1.ServerStats, erro
 	return r.Stats, r.Err
 }
 
-func (e Endpoints) LoadRepos(ctx context.Context, opts *apiv1.LoadReposOptions) (*apiv1.LoadReposReply, error) {
+func (e Endpoints) LoadRepos(ctx context.Context, opts *proto.LoadReposOptions) (*proto.LoadReposReply, error) {
 	resp, err := e.LoadReposEndpoint(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func (e Endpoints) LoadRepos(ctx context.Context, opts *apiv1.LoadReposOptions) 
 	return r.Reply, r.Err
 }
 
-func (e Endpoints) SaveRepos(ctx context.Context, opts *apiv1.SaveReposOptions) (*apiv1.SaveReposReply, error) {
+func (e Endpoints) SaveRepos(ctx context.Context, opts *proto.SaveReposOptions) (*proto.SaveReposReply, error) {
 	resp, err := e.SaveReposEndpoint(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -60,22 +60,22 @@ func MakeSaveReposEndpoint(svc services.Service) endpoint.Endpoint {
 }
 
 type LoadReposRequest struct {
-	Opts *apiv1.LoadReposOptions `json:"opts"`
+	Opts *proto.LoadReposOptions `json:"opts"`
 }
 
 type LoadReposResponse struct {
-	Reply *apiv1.LoadReposReply `json:"reply"`
+	Reply *proto.LoadReposReply `json:"reply"`
 	Err   error                 `json:"-"`
 }
 
 func (r LoadReposResponse) Failed() error { return r.Err }
 
 type SaveReposRequest struct {
-	Opts *apiv1.SaveReposOptions `json:"opts"`
+	Opts *proto.SaveReposOptions `json:"opts"`
 }
 
 type SaveReposResponse struct {
-	Reply *apiv1.SaveReposReply `json:"reply"`
+	Reply *proto.SaveReposReply `json:"reply"`
 	Err   error                 `json:"-"`
 }
 
@@ -84,7 +84,7 @@ func (r SaveReposResponse) Failed() error { return r.Err }
 type GetServerStatsRequest struct{}
 
 type GetServerStatsResponse struct {
-	Stats *apiv1.ServerStats `json:"stats"`
+	Stats *proto.ServerStats `json:"stats"`
 	Err   error              `json:"-"`
 }
 

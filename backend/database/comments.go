@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
+	"github.com/welaw/welaw/proto"
 )
 
-func (db *_database) CreateAnnotation(ann *apiv1.Annotation) (string, error) {
+func (db *_database) CreateAnnotation(ann *proto.Annotation) (string, error) {
 	db.logger.Log("method", "create_annotation", "annotation", fmt.Sprintf("%+v", ann))
 
 	q := `
@@ -69,7 +69,7 @@ func (db *_database) DeleteAnnotationById(id string) error {
 	return nil
 }
 
-func (db *_database) ListAnnotations(comment_id string) ([]*apiv1.Annotation, int, error) {
+func (db *_database) ListAnnotations(comment_id string) ([]*proto.Annotation, int, error) {
 	db.logger.Log("method", "comment_search")
 
 	q := `
@@ -87,12 +87,12 @@ func (db *_database) ListAnnotations(comment_id string) ([]*apiv1.Annotation, in
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var annotations []*apiv1.Annotation
+	var annotations []*proto.Annotation
 	var total int
 	for rows.Next() {
-		a := new(apiv1.Annotation)
+		a := new(proto.Annotation)
 		b := []byte{}
-		ranges := []*apiv1.AnnotationRange{}
+		ranges := []*proto.AnnotationRange{}
 		rows.Scan(
 			&a.Text,
 			&a.Quote,
@@ -110,7 +110,7 @@ func (db *_database) ListAnnotations(comment_id string) ([]*apiv1.Annotation, in
 	return annotations, total, err
 }
 
-func (db *_database) CreateComment(user_id string, c *apiv1.Comment) (*apiv1.Comment, error) {
+func (db *_database) CreateComment(user_id string, c *proto.Comment) (*proto.Comment, error) {
 	db.logger.Log("method", "create_comment", "comment", fmt.Sprintf("%+v", c))
 
 	q := `
@@ -178,7 +178,7 @@ func (db *_database) DeleteComment(uid string) error {
 	return nil
 }
 
-func (db *_database) GetCommentByUid(uid string) (*apiv1.Comment, error) {
+func (db *_database) GetCommentByUid(uid string) (*proto.Comment, error) {
 	db.logger.Log("method", "get_comment_by_uid", "uid", uid)
 	if uid == "" {
 		return nil, errs.BadRequest("uid not found")
@@ -204,8 +204,8 @@ func (db *_database) GetCommentByUid(uid string) (*apiv1.Comment, error) {
 		users.full_name,
 		users.full_name_private
 	`
-	var c apiv1.Comment
-	var u apiv1.User
+	var c proto.Comment
+	var u proto.User
 	err := db.conn.QueryRow(q, uid).Scan(
 		&c.Comment,
 		&c.Disabled,
@@ -226,7 +226,7 @@ func (db *_database) GetCommentByUid(uid string) (*apiv1.Comment, error) {
 	return &c, nil
 }
 
-func (db *_database) GetCommentByUserVersion(username, upstream, ident, branch string, version int32) (*apiv1.Comment, error) {
+func (db *_database) GetCommentByUserVersion(username, upstream, ident, branch string, version int32) (*proto.Comment, error) {
 	db.logger.Log("method", "get_comment", "upstream", upstream, "ident", ident, "username", username)
 	q := `
 	SELECT comments.uid,
@@ -260,8 +260,8 @@ func (db *_database) GetCommentByUserVersion(username, upstream, ident, branch s
 		users.full_name_private
 	`
 	var uid uuid.UUID
-	var c apiv1.Comment
-	var u apiv1.User
+	var c proto.Comment
+	var u proto.User
 	err := db.conn.QueryRow(q, upstream, ident, branch, version, username).Scan(
 		&uid,
 		&c.Comment,
@@ -283,7 +283,7 @@ func (db *_database) GetCommentByUserVersion(username, upstream, ident, branch s
 	return &c, nil
 }
 
-func (db *_database) UpdateComment(comment *apiv1.Comment) (c *apiv1.Comment, err error) {
+func (db *_database) UpdateComment(comment *proto.Comment) (c *proto.Comment, err error) {
 	tx, err := db.conn.Begin()
 	if err != nil {
 		return
@@ -382,7 +382,7 @@ func (db *_database) LikeComment(comment_id, user_id string) error {
 	return nil
 }
 
-func (db *_database) ListCommentsByUsername(userID, username string) ([]*apiv1.Comment, int, error) {
+func (db *_database) ListCommentsByUsername(userID, username string) ([]*proto.Comment, int, error) {
 	db.logger.Log("method", "list_comments_by_username", "user_id", userID, "username", username)
 
 	q := `
@@ -404,11 +404,11 @@ func (db *_database) ListCommentsByUsername(userID, username string) ([]*apiv1.C
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var comments []*apiv1.Comment
+	var comments []*proto.Comment
 	var total int
 	var annotationCount int32
 	for rows.Next() {
-		c := new(apiv1.Comment)
+		c := new(proto.Comment)
 		rows.Scan(
 			&c.Uid,
 			&c.Comment,
@@ -421,7 +421,7 @@ func (db *_database) ListCommentsByUsername(userID, username string) ([]*apiv1.C
 	return comments, total, err
 }
 
-func (db *_database) ListCommentsByVersion(userID, upstream, ident, branch, orderBy string, version, pageSize, pageNum int32, desc bool) ([]*apiv1.Comment, int, error) {
+func (db *_database) ListCommentsByVersion(userID, upstream, ident, branch, orderBy string, version, pageSize, pageNum int32, desc bool) ([]*proto.Comment, int, error) {
 	db.logger.Log("method", "list_comments_by_version",
 		"user_id", userID,
 		"upstream", upstream,
@@ -507,12 +507,12 @@ func (db *_database) ListCommentsByVersion(userID, upstream, ident, branch, orde
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var comments []*apiv1.Comment
+	var comments []*proto.Comment
 	var total int
 	var annotationCount int32
 	for rows.Next() {
-		c := new(apiv1.Comment)
-		u := new(apiv1.User)
+		c := new(proto.Comment)
+		u := new(proto.User)
 		rows.Scan(
 			&c.Uid,
 			&c.Comment,

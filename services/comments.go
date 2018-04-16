@@ -3,12 +3,12 @@ package services
 import (
 	"context"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
 	"github.com/welaw/welaw/pkg/permissions"
+	"github.com/welaw/welaw/proto"
 )
 
-func (svc service) CreateAnnotation(ctx context.Context, ann *apiv1.Annotation) (string, error) {
+func (svc service) CreateAnnotation(ctx context.Context, ann *proto.Annotation) (string, error) {
 	_, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return "", errs.Unauthorized("user_id not found")
@@ -36,56 +36,72 @@ func (svc service) DeleteAnnotation(ctx context.Context, id string) error {
 	return svc.db.DeleteAnnotationById(id)
 }
 
-func (svc service) ListAnnotations(ctx context.Context, opts *apiv1.ListAnnotationsOptions) ([]*apiv1.Annotation, int, error) {
+func (svc service) ListAnnotations(ctx context.Context, opts *proto.ListAnnotationsOptions) ([]*proto.Annotation, int, error) {
 	switch {
 	case opts == nil:
 		return nil, 0, errs.ErrBadRequest
-	case opts.ReqType == apiv1.ListAnnotationsOptions_BY_COMMENT:
+	case opts.ReqType == proto.ListAnnotationsOptions_BY_COMMENT:
 		return svc.db.ListAnnotations(opts.CommentId)
 	default:
 		return nil, 0, errs.ErrBadRequest
 	}
 }
 
-func (svc service) CreateComment(ctx context.Context, comment *apiv1.Comment) (*apiv1.Comment, error) {
+func (svc service) CreateComment(ctx context.Context, comment *proto.Comment) (*proto.Comment, error) {
 	uid, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return nil, errs.ErrUnauthorized
 	}
-	_, err := svc.hasPermission(uid, permissions.OpCommentCreate)
-	if err != nil {
-		return nil, err
-	}
-	//if !perm {
+
+	//if perm, err := svc.hasPermission(uid, permissions.OpCommentCreate, comment); err != nil {
+	//return nil, err
+	//} else if !perm {
 	//return nil, errs.ErrUnauthorized
 	//}
+
 	return svc.db.CreateComment(uid, comment)
 }
 
 func (svc service) DeleteComment(ctx context.Context, uid string) error {
+	uid, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return errs.ErrUnauthorized
+	}
+
+	c, err := svc.db.GetCommentByUid(uid)
+	if err != nil {
+		return err
+	}
+
+	if perm, err := svc.hasPermission(uid, permissions.OpCommentDelete, c); err != nil {
+		return err
+	} else if !perm {
+		return errs.ErrUnauthorized
+	}
+
 	return svc.db.DeleteComment(uid)
 }
 
-func (svc service) GetComment(ctx context.Context, opts *apiv1.GetCommentOptions) (*apiv1.Comment, error) {
+func (svc service) GetComment(ctx context.Context, opts *proto.GetCommentOptions) (*proto.Comment, error) {
 	switch {
 	case opts == nil:
 		return nil, errs.ErrBadRequest
-	case opts.ReqType == apiv1.GetCommentOptions_BY_USER_VERSION:
+	case opts.ReqType == proto.GetCommentOptions_BY_USER_VERSION:
 		return svc.db.GetCommentByUserVersion(opts.Username, opts.Upstream, opts.Ident, opts.Branch, opts.Version)
-	case opts.ReqType == apiv1.GetCommentOptions_BY_UID:
+	case opts.ReqType == proto.GetCommentOptions_BY_UID:
 		return svc.db.GetCommentByUid(opts.Uid)
 	}
 	return nil, errs.ErrBadRequest
 }
 
-func (svc service) ListComments(ctx context.Context, opts *apiv1.ListCommentsOptions) ([]*apiv1.Comment, int, error) {
+func (svc service) ListComments(ctx context.Context, opts *proto.ListCommentsOptions) ([]*proto.Comment, int, error) {
 	uid, _ := ctx.Value("user_id").(string)
 	switch {
 	case opts == nil:
 		return nil, 0, errs.ErrBadRequest
-	case opts.ReqType == apiv1.ListCommentsOptions_BY_USERNAME:
+	case opts.ReqType == proto.ListCommentsOptions_BY_USERNAME:
 		return svc.db.ListCommentsByUsername(uid, opts.Username)
-	case opts.ReqType == apiv1.ListCommentsOptions_BY_VERSION:
+	case opts.ReqType == proto.ListCommentsOptions_BY_VERSION:
 		return svc.db.ListCommentsByVersion(
 			uid,
 			opts.Upstream,
@@ -101,7 +117,7 @@ func (svc service) ListComments(ctx context.Context, opts *apiv1.ListCommentsOpt
 	return nil, 0, errs.ErrBadRequest
 }
 
-func (svc service) UpdateComment(ctx context.Context, comment *apiv1.Comment) (c *apiv1.Comment, err error) {
+func (svc service) UpdateComment(ctx context.Context, comment *proto.Comment) (c *proto.Comment, err error) {
 	c, err = svc.db.UpdateComment(comment)
 	if err != nil {
 		return
@@ -113,7 +129,7 @@ func (svc service) UpdateComment(ctx context.Context, comment *apiv1.Comment) (c
 	return
 }
 
-func (svc service) LikeComment(ctx context.Context, opts *apiv1.LikeCommentOptions) error {
+func (svc service) LikeComment(ctx context.Context, opts *proto.LikeCommentOptions) error {
 	uid, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return errs.ErrUnauthorized

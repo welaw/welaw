@@ -1,10 +1,9 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
-import "api/v1/user.proto";
+import "proto/user.proto";
 
-package grpc.welaw.v1;
-
+package proto;
 
 message LawSet {
     Law law = 1;
@@ -22,50 +21,15 @@ message Author {
     string picture_url = 5;
 }
 
-message L {
-    string uid = 1;
-    string user_id = 2;
-	string upstream = 3;
-    /*string upstream_group = 4;*/
-	string ident = 5;
-	string title = 6;
-    string short_title = 7;
-    string description = 8;
-    /*map<int32,string> groups = 9;*/
-    /*int32 idx_1 = 10;*/
-    /*int32 idx_2 = 11;*/
-
-    Branch branch = 12;
-    repeated Branch branches = 13;
-    Version version = 14;
-    repeated Version versions = 15;
-    User user = 16;
-    Law parent = 17;
-    string url = 18;
-
-	string branch_name = 4;
-}
-
 message Law {
     string uid = 1;
     string user_id = 2;
 	string upstream = 3;
-    /*string upstream_group = 4;*/
-	string ident = 5;
-	string title = 6;
-    string short_title = 7;
-    string description = 8;
-    /*map<int32,string> groups = 9;*/
-    /*int32 idx_1 = 10;*/
-    /*int32 idx_2 = 11;*/
-
-    Branch branch = 12;
-    repeated Branch branches = 13;
-    Version version = 14;
-    repeated Version versions = 15;
-    User user = 16;
-    Law parent = 17;
-    string url = 18;
+	string ident = 4;
+	string title = 5;
+    string short_title = 6;
+    string description = 7;
+    string url = 8;
 }
 
 message Branch {
@@ -73,6 +37,7 @@ message Branch {
     string law_id = 2;
     string user_id = 3;
 	string name = 4;
+    string upstream = 5;
 }
 
 message Version {
@@ -86,26 +51,12 @@ message Version {
 	string body = 8;
     string label = 9;
     google.protobuf.Timestamp published_at = 11;
-    repeated LawTag tags = 12;
-    string tag_1 = 13;
-    string tag_2 = 14;
-    string tag_3 = 15;
-    string tag_4 = 16;
-    int32 yays = 17;
-    int32 nays = 18;
-    bool has_voted = 19;
-    string upstream_group = 20;
-    int32 comment_count = 21;
-}
-
-message LawTag {
-    string ident = 1;
-    int32 ranking = 2;
-    bool number_type = 3;
-    string name = 4;
-    string string_value = 5;
-    int32 number_value = 6;
-    string description = 7;
+    map<string, string> tags = 12;
+    int32 yays = 13;
+    int32 nays = 14;
+    bool has_voted = 15;
+    string upstream_group = 16;
+    int32 comment_count = 17;
 }
 
 message CreateLawOptions {

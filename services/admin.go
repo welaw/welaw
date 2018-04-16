@@ -3,12 +3,12 @@ package services
 import (
 	"context"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
 	"github.com/welaw/welaw/pkg/permissions"
+	"github.com/welaw/welaw/proto"
 )
 
-func (svc service) GetServerStats(ctx context.Context) (*apiv1.ServerStats, error) {
+func (svc service) GetServerStats(ctx context.Context) (*proto.ServerStats, error) {
 	stats, err := svc.db.GetServerStats()
 	if err != nil {
 		return nil, err
@@ -17,12 +17,12 @@ func (svc service) GetServerStats(ctx context.Context) (*apiv1.ServerStats, erro
 
 }
 
-func (svc service) LoadRepos(ctx context.Context, opts *apiv1.LoadReposOptions) (*apiv1.LoadReposReply, error) {
+func (svc service) LoadRepos(ctx context.Context, opts *proto.LoadReposOptions) (*proto.LoadReposReply, error) {
 	uid, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return nil, errs.ErrUnauthorized
 	}
-	perm, err := svc.hasPermission(uid, permissions.OpReposLoad)
+	perm, err := svc.hasPermission(uid, permissions.OpReposLoad, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -35,31 +35,29 @@ func (svc service) LoadRepos(ctx context.Context, opts *apiv1.LoadReposOptions) 
 }
 
 // copy local repos to storage
-func (svc service) SaveRepos(ctx context.Context, opts *apiv1.SaveReposOptions) (*apiv1.SaveReposReply, error) {
+func (svc service) SaveRepos(ctx context.Context, opts *proto.SaveReposOptions) (*proto.SaveReposReply, error) {
 	uid, ok := ctx.Value("user_id").(string)
 	if !ok {
 		return nil, errs.ErrUnauthorized
 	}
-	perm, err := svc.hasPermission(uid, permissions.OpReposSave)
-	if err != nil {
+	if perm, err := svc.hasPermission(uid, permissions.OpReposSave, nil); err != nil {
 		return nil, err
-	}
-	if !perm {
+	} else if !perm {
 		return nil, errs.ErrUnauthorized
 	}
 
 	switch {
 	case opts == nil:
 		return nil, errs.BadRequest("opts not found")
-	case opts.ReqType == apiv1.SaveReposOptions_LOAD:
+	case opts.ReqType == proto.SaveReposOptions_LOAD:
 		return svc.loadRepos(ctx, opts)
-	case opts.ReqType == apiv1.SaveReposOptions_SAVE:
+	case opts.ReqType == proto.SaveReposOptions_SAVE:
 		return svc.saveRepos(ctx, opts)
 	}
 	return nil, errs.BadRequest("unknown opts")
 }
 
-func (svc service) loadRepos(ctx context.Context, opts *apiv1.SaveReposOptions) (*apiv1.SaveReposReply, error) {
+func (svc service) loadRepos(ctx context.Context, opts *proto.SaveReposOptions) (*proto.SaveReposReply, error) {
 	//zipfile := "repos.zip"
 	//r, err := svc.storageClient.Bucket(svc.Opts.DefaultBucketName).Object(zipfile).NewReader(ctx)
 	//if err != nil {
@@ -92,7 +90,7 @@ func (svc service) loadRepos(ctx context.Context, opts *apiv1.SaveReposOptions) 
 	return nil, nil
 }
 
-func (svc service) saveRepos(ctx context.Context, opts *apiv1.SaveReposOptions) (*apiv1.SaveReposReply, error) {
+func (svc service) saveRepos(ctx context.Context, opts *proto.SaveReposOptions) (*proto.SaveReposReply, error) {
 	//zipfile := "repos.zip"
 	//outdir := "."
 	//// tmp dir
@@ -131,5 +129,5 @@ func (svc service) saveRepos(ctx context.Context, opts *apiv1.SaveReposOptions) 
 	//return nil, err
 	//}
 
-	return &apiv1.SaveReposReply{}, nil
+	return &proto.SaveReposReply{}, nil
 }

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw instrumentatingMiddleware) CreateAnnotation(ctx context.Context, ann *apiv1.Annotation) (id string, err error) {
+func (mw instrumentatingMiddleware) CreateAnnotation(ctx context.Context, ann *proto.Annotation) (id string, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "create_annotation", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -30,7 +30,7 @@ func (mw instrumentatingMiddleware) DeleteAnnotation(ctx context.Context, id str
 	return
 }
 
-func (mw instrumentatingMiddleware) ListAnnotations(ctx context.Context, opts *apiv1.ListAnnotationsOptions) (rows []*apiv1.Annotation, total int, err error) {
+func (mw instrumentatingMiddleware) ListAnnotations(ctx context.Context, opts *proto.ListAnnotationsOptions) (rows []*proto.Annotation, total int, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "list_annotations", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -41,7 +41,7 @@ func (mw instrumentatingMiddleware) ListAnnotations(ctx context.Context, opts *a
 	return
 }
 
-func (mw instrumentatingMiddleware) CreateComment(ctx context.Context, comment *apiv1.Comment) (c *apiv1.Comment, err error) {
+func (mw instrumentatingMiddleware) CreateComment(ctx context.Context, comment *proto.Comment) (c *proto.Comment, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "create_comment", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -63,7 +63,7 @@ func (mw instrumentatingMiddleware) DeleteComment(ctx context.Context, uid strin
 	return
 }
 
-func (mw instrumentatingMiddleware) ListComments(ctx context.Context, opts *apiv1.ListCommentsOptions) (rows []*apiv1.Comment, total int, err error) {
+func (mw instrumentatingMiddleware) ListComments(ctx context.Context, opts *proto.ListCommentsOptions) (rows []*proto.Comment, total int, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "list_comments", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -74,7 +74,7 @@ func (mw instrumentatingMiddleware) ListComments(ctx context.Context, opts *apiv
 	return
 }
 
-func (mw instrumentatingMiddleware) GetComment(ctx context.Context, opts *apiv1.GetCommentOptions) (c *apiv1.Comment, err error) {
+func (mw instrumentatingMiddleware) GetComment(ctx context.Context, opts *proto.GetCommentOptions) (c *proto.Comment, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "get_comment", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -85,7 +85,7 @@ func (mw instrumentatingMiddleware) GetComment(ctx context.Context, opts *apiv1.
 	return
 }
 
-func (mw instrumentatingMiddleware) UpdateComment(ctx context.Context, comment *apiv1.Comment) (c *apiv1.Comment, err error) {
+func (mw instrumentatingMiddleware) UpdateComment(ctx context.Context, comment *proto.Comment) (c *proto.Comment, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "update_comment", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -96,7 +96,7 @@ func (mw instrumentatingMiddleware) UpdateComment(ctx context.Context, comment *
 	return
 }
 
-func (mw instrumentatingMiddleware) LikeComment(ctx context.Context, opts *apiv1.LikeCommentOptions) (err error) {
+func (mw instrumentatingMiddleware) LikeComment(ctx context.Context, opts *proto.LikeCommentOptions) (err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "like_comment", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -107,7 +107,7 @@ func (mw instrumentatingMiddleware) LikeComment(ctx context.Context, opts *apiv1
 	return
 }
 
-func (mw instrumentatingMiddleware) CreateLaw(ctx context.Context, set *apiv1.LawSet, opts *apiv1.CreateLawOptions) (rep *apiv1.CreateLawReply, err error) {
+func (mw instrumentatingMiddleware) CreateLaw(ctx context.Context, set *proto.LawSet, opts *proto.CreateLawOptions) (rep *proto.CreateLawReply, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "create_law", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -118,7 +118,7 @@ func (mw instrumentatingMiddleware) CreateLaw(ctx context.Context, set *apiv1.La
 	return
 }
 
-func (mw instrumentatingMiddleware) CreateLaws(ctx context.Context, sets []*apiv1.LawSet, opts *apiv1.CreateLawsOptions) (l []*apiv1.LawSet, err error) {
+func (mw instrumentatingMiddleware) CreateLaws(ctx context.Context, sets []*proto.LawSet, opts *proto.CreateLawsOptions) (l []*proto.LawSet, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "create_laws", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -129,7 +129,7 @@ func (mw instrumentatingMiddleware) CreateLaws(ctx context.Context, sets []*apiv
 	return
 }
 
-func (mw instrumentatingMiddleware) DeleteLaw(ctx context.Context, u, i string, opts *apiv1.DeleteLawOptions) (err error) {
+func (mw instrumentatingMiddleware) DeleteLaw(ctx context.Context, u, i string, opts *proto.DeleteLawOptions) (err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "delete_law", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -140,7 +140,7 @@ func (mw instrumentatingMiddleware) DeleteLaw(ctx context.Context, u, i string, 
 	return
 }
 
-func (mw instrumentatingMiddleware) DiffLaws(ctx context.Context, upstream, ident string, opts *apiv1.DiffLawsOptions) (r *apiv1.DiffLawsReply, err error) {
+func (mw instrumentatingMiddleware) DiffLaws(ctx context.Context, upstream, ident string, opts *proto.DiffLawsOptions) (r *proto.DiffLawsReply, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "diff_laws", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -151,7 +151,7 @@ func (mw instrumentatingMiddleware) DiffLaws(ctx context.Context, upstream, iden
 	return
 }
 
-func (mw instrumentatingMiddleware) GetLaw(ctx context.Context, u, i string, opts *apiv1.GetLawOptions) (rep *apiv1.GetLawReply, err error) {
+func (mw instrumentatingMiddleware) GetLaw(ctx context.Context, u, i string, opts *proto.GetLawOptions) (rep *proto.GetLawReply, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "get_law", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -162,7 +162,7 @@ func (mw instrumentatingMiddleware) GetLaw(ctx context.Context, u, i string, opt
 	return
 }
 
-func (mw instrumentatingMiddleware) ListLaws(ctx context.Context, opts *apiv1.ListLawsOptions) (resp *apiv1.ListLawsReply, err error) {
+func (mw instrumentatingMiddleware) ListLaws(ctx context.Context, opts *proto.ListLawsOptions) (resp *proto.ListLawsReply, err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "list_laws", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)
@@ -173,7 +173,7 @@ func (mw instrumentatingMiddleware) ListLaws(ctx context.Context, opts *apiv1.Li
 	return
 }
 
-func (mw instrumentatingMiddleware) UpdateLaw(ctx context.Context, law *apiv1.LawSet, opts *apiv1.UpdateLawOptions) (err error) {
+func (mw instrumentatingMiddleware) UpdateLaw(ctx context.Context, law *proto.LawSet, opts *proto.UpdateLawOptions) (err error) {
 	defer func(begin time.Time) {
 		s := []string{"method", "update_law", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(s...).Add(1)

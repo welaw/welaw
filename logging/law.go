@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw loggingMiddleware) CreateAnnotation(ctx context.Context, ann *apiv1.Annotation) (id string, err error) {
+func (mw loggingMiddleware) CreateAnnotation(ctx context.Context, ann *proto.Annotation) (id string, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "create_annotation",
@@ -35,7 +35,7 @@ func (mw loggingMiddleware) DeleteAnnotation(ctx context.Context, id string) (er
 	return
 }
 
-func (mw loggingMiddleware) ListAnnotations(ctx context.Context, opts *apiv1.ListAnnotationsOptions) (rows []*apiv1.Annotation, total int, err error) {
+func (mw loggingMiddleware) ListAnnotations(ctx context.Context, opts *proto.ListAnnotationsOptions) (rows []*proto.Annotation, total int, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "list_annotations",
@@ -50,7 +50,7 @@ func (mw loggingMiddleware) ListAnnotations(ctx context.Context, opts *apiv1.Lis
 	return
 }
 
-func (mw loggingMiddleware) ListComments(ctx context.Context, opts *apiv1.ListCommentsOptions) (rows []*apiv1.Comment, total int, err error) {
+func (mw loggingMiddleware) ListComments(ctx context.Context, opts *proto.ListCommentsOptions) (rows []*proto.Comment, total int, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "list_comments",
@@ -65,7 +65,7 @@ func (mw loggingMiddleware) ListComments(ctx context.Context, opts *apiv1.ListCo
 	return
 }
 
-func (mw loggingMiddleware) CreateComment(ctx context.Context, comment *apiv1.Comment) (c *apiv1.Comment, err error) {
+func (mw loggingMiddleware) CreateComment(ctx context.Context, comment *proto.Comment) (c *proto.Comment, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "create_comment",
@@ -92,7 +92,7 @@ func (mw loggingMiddleware) DeleteComment(ctx context.Context, uid string) (err 
 	return
 }
 
-func (mw loggingMiddleware) GetComment(ctx context.Context, opts *apiv1.GetCommentOptions) (c *apiv1.Comment, err error) {
+func (mw loggingMiddleware) GetComment(ctx context.Context, opts *proto.GetCommentOptions) (c *proto.Comment, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "get_comment",
@@ -106,7 +106,7 @@ func (mw loggingMiddleware) GetComment(ctx context.Context, opts *apiv1.GetComme
 	return
 }
 
-func (mw loggingMiddleware) UpdateComment(ctx context.Context, comment *apiv1.Comment) (c *apiv1.Comment, err error) {
+func (mw loggingMiddleware) UpdateComment(ctx context.Context, comment *proto.Comment) (c *proto.Comment, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "update_comment",
@@ -121,7 +121,7 @@ func (mw loggingMiddleware) UpdateComment(ctx context.Context, comment *apiv1.Co
 	return
 }
 
-func (mw loggingMiddleware) LikeComment(ctx context.Context, opts *apiv1.LikeCommentOptions) (err error) {
+func (mw loggingMiddleware) LikeComment(ctx context.Context, opts *proto.LikeCommentOptions) (err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "like_comment",
@@ -134,7 +134,7 @@ func (mw loggingMiddleware) LikeComment(ctx context.Context, opts *apiv1.LikeCom
 	return
 }
 
-func (mw loggingMiddleware) CreateLaw(ctx context.Context, set *apiv1.LawSet, opts *apiv1.CreateLawOptions) (rep *apiv1.CreateLawReply, err error) {
+func (mw loggingMiddleware) CreateLaw(ctx context.Context, set *proto.LawSet, opts *proto.CreateLawOptions) (rep *proto.CreateLawReply, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "create_law",
@@ -153,7 +153,7 @@ func (mw loggingMiddleware) CreateLaw(ctx context.Context, set *apiv1.LawSet, op
 	return
 }
 
-func (mw loggingMiddleware) CreateLaws(ctx context.Context, sets []*apiv1.LawSet, opts *apiv1.CreateLawsOptions) (l []*apiv1.LawSet, err error) {
+func (mw loggingMiddleware) CreateLaws(ctx context.Context, sets []*proto.LawSet, opts *proto.CreateLawsOptions) (l []*proto.LawSet, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "create_laws",
@@ -168,7 +168,7 @@ func (mw loggingMiddleware) CreateLaws(ctx context.Context, sets []*apiv1.LawSet
 	return
 }
 
-func (mw loggingMiddleware) DeleteLaw(ctx context.Context, upstream, ident string, opts *apiv1.DeleteLawOptions) (err error) {
+func (mw loggingMiddleware) DeleteLaw(ctx context.Context, upstream, ident string, opts *proto.DeleteLawOptions) (err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "delete_law",
@@ -183,7 +183,7 @@ func (mw loggingMiddleware) DeleteLaw(ctx context.Context, upstream, ident strin
 	return
 }
 
-func (mw loggingMiddleware) DiffLaws(ctx context.Context, upstream, ident string, opts *apiv1.DiffLawsOptions) (r *apiv1.DiffLawsReply, err error) {
+func (mw loggingMiddleware) DiffLaws(ctx context.Context, upstream, ident string, opts *proto.DiffLawsOptions) (r *proto.DiffLawsReply, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "diff_laws",
@@ -199,7 +199,7 @@ func (mw loggingMiddleware) DiffLaws(ctx context.Context, upstream, ident string
 	return
 }
 
-func (mw loggingMiddleware) GetLaw(ctx context.Context, upstream, ident string, opts *apiv1.GetLawOptions) (rep *apiv1.GetLawReply, err error) {
+func (mw loggingMiddleware) GetLaw(ctx context.Context, upstream, ident string, opts *proto.GetLawOptions) (rep *proto.GetLawReply, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "get_law",
@@ -214,7 +214,7 @@ func (mw loggingMiddleware) GetLaw(ctx context.Context, upstream, ident string, 
 	return
 }
 
-func (mw loggingMiddleware) ListLaws(ctx context.Context, opts *apiv1.ListLawsOptions) (resp *apiv1.ListLawsReply, err error) {
+func (mw loggingMiddleware) ListLaws(ctx context.Context, opts *proto.ListLawsOptions) (resp *proto.ListLawsReply, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "list_laws",
@@ -228,7 +228,7 @@ func (mw loggingMiddleware) ListLaws(ctx context.Context, opts *apiv1.ListLawsOp
 	return
 }
 
-func (mw loggingMiddleware) UpdateLaw(ctx context.Context, set *apiv1.LawSet, opts *apiv1.UpdateLawOptions) (err error) {
+func (mw loggingMiddleware) UpdateLaw(ctx context.Context, set *proto.LawSet, opts *proto.UpdateLawOptions) (err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "update_law",

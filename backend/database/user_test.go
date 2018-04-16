@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/backend/database"
+	"github.com/welaw/welaw/proto"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -19,9 +19,9 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-func createTestUser(t *testing.T, db database.Database) *apiv1.User {
+func createTestUser(t *testing.T, db database.Database) *proto.User {
 	seq := randSeq(6)
-	u := &apiv1.User{
+	u := &proto.User{
 		Username:     "test-" + seq,
 		FullName:     "test full name",
 		Email:        "test-" + seq + "@welaw.org",

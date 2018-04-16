@@ -2,9 +2,9 @@
 .DEFAULT_GOAL := build
 DB_URL := "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):5432/$(DB_NAME)?sslmode=$(DB_SSL_MODE)"
 
-api:
-	@echo "==> Making API ..."
-	protoc api/v1/*.proto --go_out=plugins=grpc:.
+proto:
+	@echo "==> Making proto ..."
+	protoc proto/*.proto --go_out=plugins=grpc:.
 
 build:
 	@echo "==> Building ..."
@@ -107,4 +107,4 @@ install-test-deps: install-go-deps
 	@echo "==> Installing testing dependencies ..."
 	go get github.com/stretchr/testify/...
 
-.PHONY: api clean reset-db install install-migrate test
+.PHONY: proto clean reset-db install install-migrate test

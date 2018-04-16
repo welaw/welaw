@@ -7,21 +7,8 @@ import (
 	"github.com/go-kit/kit/log"
 )
 
-const (
-	EnvPath = "../../_environments/dev.env"
-)
-
-type TestEnv interface {
-}
-
 type testEnv struct {
 	repoPath string
-}
-
-func MakeTestEnv() TestEnv {
-	return &testEnv{
-		repoPath: "",
-	}
 }
 
 func NewLogger(out io.Writer) log.Logger {

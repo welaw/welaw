@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw instrumentatingMiddleware) CreateVote(ctx context.Context, vote *apiv1.Vote, opts *apiv1.CreateVoteOptions) (v *apiv1.Vote, err error) {
+func (mw instrumentatingMiddleware) CreateVote(ctx context.Context, vote *proto.Vote, opts *proto.CreateVoteOptions) (v *proto.Vote, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "create_vote", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -19,7 +19,7 @@ func (mw instrumentatingMiddleware) CreateVote(ctx context.Context, vote *apiv1.
 	return
 }
 
-func (mw instrumentatingMiddleware) CreateVotes(ctx context.Context, votes []*apiv1.Vote, opts *apiv1.CreateVotesOptions) (v []*apiv1.Vote, err error) {
+func (mw instrumentatingMiddleware) CreateVotes(ctx context.Context, votes []*proto.Vote, opts *proto.CreateVotesOptions) (v []*proto.Vote, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "create_votes", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -30,7 +30,7 @@ func (mw instrumentatingMiddleware) CreateVotes(ctx context.Context, votes []*ap
 	return
 }
 
-func (mw instrumentatingMiddleware) GetVote(ctx context.Context, upstream, ident string, opts *apiv1.GetVoteOptions) (v *apiv1.Vote, err error) {
+func (mw instrumentatingMiddleware) GetVote(ctx context.Context, upstream, ident string, opts *proto.GetVoteOptions) (v *proto.Vote, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "get_vote", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -41,7 +41,7 @@ func (mw instrumentatingMiddleware) GetVote(ctx context.Context, upstream, ident
 	return
 }
 
-func (mw instrumentatingMiddleware) DeleteVote(ctx context.Context, upstream, ident string, opts *apiv1.DeleteVoteOptions) (err error) {
+func (mw instrumentatingMiddleware) DeleteVote(ctx context.Context, upstream, ident string, opts *proto.DeleteVoteOptions) (err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "delete_vote", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -52,7 +52,7 @@ func (mw instrumentatingMiddleware) DeleteVote(ctx context.Context, upstream, id
 	return
 }
 
-func (mw instrumentatingMiddleware) ListVotes(ctx context.Context, opts *apiv1.ListVotesOptions) (rep *apiv1.ListVotesReply, err error) {
+func (mw instrumentatingMiddleware) ListVotes(ctx context.Context, opts *proto.ListVotesOptions) (rep *proto.ListVotesReply, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "list_votes", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -63,7 +63,7 @@ func (mw instrumentatingMiddleware) ListVotes(ctx context.Context, opts *apiv1.L
 	return rep, err
 }
 
-func (mw instrumentatingMiddleware) UpdateVote(ctx context.Context, vote *apiv1.Vote, opts *apiv1.UpdateVoteOptions) (v *apiv1.Vote, err error) {
+func (mw instrumentatingMiddleware) UpdateVote(ctx context.Context, vote *proto.Vote, opts *proto.UpdateVoteOptions) (v *proto.Vote, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "update_vote", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)

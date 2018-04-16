@@ -1,10 +1,10 @@
 package database
 
 import (
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (db *_database) GetServerStats() (*apiv1.ServerStats, error) {
+func (db *_database) GetServerStats() (*proto.ServerStats, error) {
 	q := `
 	SELECT (
 		SELECT COUNT(uid)
@@ -34,7 +34,7 @@ func (db *_database) GetServerStats() (*apiv1.ServerStats, error) {
 	FROM votes
 	WHERE deleted_at IS NULL
 	`
-	stats := new(apiv1.ServerStats)
+	stats := new(proto.ServerStats)
 	err := db.conn.QueryRow(q).Scan(
 		&stats.Upstreams,
 		&stats.Users,

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw instrumentatingMiddleware) CreateUser(ctx context.Context, user *apiv1.User) (u *apiv1.User, err error) {
+func (mw instrumentatingMiddleware) CreateUser(ctx context.Context, user *proto.User) (u *proto.User, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "create_user", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -19,7 +19,7 @@ func (mw instrumentatingMiddleware) CreateUser(ctx context.Context, user *apiv1.
 	return
 }
 
-func (mw instrumentatingMiddleware) CreateUsers(ctx context.Context, users []*apiv1.User) (u []*apiv1.User, err error) {
+func (mw instrumentatingMiddleware) CreateUsers(ctx context.Context, users []*proto.User) (u []*proto.User, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "create_users", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -41,7 +41,7 @@ func (mw instrumentatingMiddleware) DeleteUser(ctx context.Context, username str
 	return
 }
 
-func (mw instrumentatingMiddleware) GetUser(ctx context.Context, opts *apiv1.GetUserOptions) (user *apiv1.User, err error) {
+func (mw instrumentatingMiddleware) GetUser(ctx context.Context, opts *proto.GetUserOptions) (user *proto.User, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "get_user", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -52,7 +52,7 @@ func (mw instrumentatingMiddleware) GetUser(ctx context.Context, opts *apiv1.Get
 	return
 }
 
-func (mw instrumentatingMiddleware) ListUsers(ctx context.Context, opts *apiv1.ListUsersOptions) (users []*apiv1.User, total int, err error) {
+func (mw instrumentatingMiddleware) ListUsers(ctx context.Context, opts *proto.ListUsersOptions) (users []*proto.User, total int, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "list_users", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -63,7 +63,7 @@ func (mw instrumentatingMiddleware) ListUsers(ctx context.Context, opts *apiv1.L
 	return
 }
 
-func (mw instrumentatingMiddleware) UpdateUser(ctx context.Context, username string, opts *apiv1.UpdateUserOptions) (u *apiv1.User, err error) {
+func (mw instrumentatingMiddleware) UpdateUser(ctx context.Context, username string, opts *proto.UpdateUserOptions) (u *proto.User, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "update_user", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
@@ -74,7 +74,7 @@ func (mw instrumentatingMiddleware) UpdateUser(ctx context.Context, username str
 	return
 }
 
-func (mw instrumentatingMiddleware) UploadAvatar(ctx context.Context, opts *apiv1.UploadAvatarOptions) (err error) {
+func (mw instrumentatingMiddleware) UploadAvatar(ctx context.Context, opts *proto.UploadAvatarOptions) (err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "upload_avatar", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)

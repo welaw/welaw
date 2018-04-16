@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
 	"github.com/welaw/welaw/pkg/permissions"
+	"github.com/welaw/welaw/proto"
 )
 
 const (
@@ -15,17 +15,14 @@ const (
 	masterLabel = "master"
 )
 
-func (svc service) CreateLaw(ctx context.Context, set *apiv1.LawSet, opts *apiv1.CreateLawOptions) (*apiv1.CreateLawReply, error) {
+func (svc service) CreateLaw(ctx context.Context, set *proto.LawSet, opts *proto.CreateLawOptions) (*proto.CreateLawReply, error) {
 	uid, ok := ctx.Value("user_id").(string)
 	if !ok || uid == "" {
 		return nil, errs.ErrUnauthorized
 	}
-
-	//admin, err := svc.hasPermission(uid, permissions.OpLawCreate)
-	//if err != nil {
+	//if perm, err := svc.hasPermission(uid, permissions.OpVersionCreate, set); err != nil {
 	//return nil, err
-	//}
-	//if !admin {
+	//} else if !perm {
 	//return nil, errs.ErrUnauthorized
 	//}
 
@@ -33,12 +30,11 @@ func (svc service) CreateLaw(ctx context.Context, set *apiv1.LawSet, opts *apiv1
 	if err != nil {
 		return nil, err
 	}
-	user.Uid = uid
-	var law *apiv1.LawSet
+	var law *proto.LawSet
 	switch {
 	case opts == nil:
 		return nil, errs.BadRequest("opts not found")
-	// case opts.ReqType == apiv1.CreateLawOptions_VERSION
+	// case opts.ReqType == proto.CreateLawOptions_VERSION
 	case opts.Branch != "" && opts.Version != 0:
 		law, err = svc.createVersion(ctx, user, opts.Branch, uint32(opts.Version), set)
 	default:
@@ -48,10 +44,10 @@ func (svc service) CreateLaw(ctx context.Context, set *apiv1.LawSet, opts *apiv1
 	if err != nil {
 		return nil, err
 	}
-	return &apiv1.CreateLawReply{LawSet: law}, nil
+	return &proto.CreateLawReply{LawSet: law}, nil
 }
 
-func (svc service) CreateLaws(ctx context.Context, sets []*apiv1.LawSet, opts *apiv1.CreateLawsOptions) ([]*apiv1.LawSet, error) {
+func (svc service) CreateLaws(ctx context.Context, sets []*proto.LawSet, opts *proto.CreateLawsOptions) ([]*proto.LawSet, error) {
 	username, usernameFound := ctx.Value("username").(string)
 	password, passwordFound := ctx.Value("password").(string)
 	if !usernameFound || !passwordFound {
@@ -71,11 +67,11 @@ func (svc service) CreateLaws(ctx context.Context, sets []*apiv1.LawSet, opts *a
 		return nil, errs.ErrUnauthorized
 	}
 
-	user, err := svc.db.GetUserByUsername(username, "", true)
+	user, err := svc.db.GetUserByUsername(username, false)
 	if err != nil {
 		return nil, err
 	}
-	var done []*apiv1.LawSet
+	var done []*proto.LawSet
 	for _, l := range sets {
 		law, err := svc.createUpstreamLaw(ctx, user, l)
 		if err != nil {
@@ -86,7 +82,7 @@ func (svc service) CreateLaws(ctx context.Context, sets []*apiv1.LawSet, opts *a
 	return done, nil
 }
 
-func (svc service) createUpstreamLaw(ctx context.Context, user *apiv1.User, set *apiv1.LawSet) (*apiv1.LawSet, error) {
+func (svc service) createUpstreamLaw(ctx context.Context, user *proto.User, set *proto.LawSet) (*proto.LawSet, error) {
 	if user.GetUpstream() != set.GetLaw().GetUpstream() {
 		svc.logger.Log("error", "user upstream does not match law upstream",
 			"user", user.GetUpstream(),
@@ -97,7 +93,7 @@ func (svc service) createUpstreamLaw(ctx context.Context, user *apiv1.User, set 
 		return nil, errs.BadRequest("law author not set: %+v", set.Author)
 	}
 
-	author, err := svc.db.GetUserByUsername(set.Author.Username, user.Uid, true)
+	author, err := svc.db.GetUserByUsername(set.Author.Username, true)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +143,7 @@ func (svc service) createUpstreamLaw(ctx context.Context, user *apiv1.User, set 
 	return userLaw, nil
 }
 
-func (svc service) createLaw(ctx context.Context, parent string, set *apiv1.LawSet) (*apiv1.LawSet, error) {
+func (svc service) createLaw(ctx context.Context, parent string, set *proto.LawSet) (*proto.LawSet, error) {
 	tx, err := svc.db.Begin()
 	if err != nil {
 		return nil, err
@@ -175,7 +171,7 @@ func (svc service) createLaw(ctx context.Context, parent string, set *apiv1.LawS
 	return newLaw, nil
 }
 
-func (svc service) createBranch(_ context.Context, branch string, version uint32, set *apiv1.LawSet) (*apiv1.LawSet, error) {
+func (svc service) createBranch(_ context.Context, branch string, version uint32, set *proto.LawSet) (*proto.LawSet, error) {
 	tx, err := svc.db.Begin()
 	if err != nil {
 		return nil, err
@@ -208,7 +204,7 @@ func (svc service) createBranch(_ context.Context, branch string, version uint32
 	return set, nil
 }
 
-func (svc service) createFirstVersion(ctx context.Context, set *apiv1.LawSet) (law *apiv1.LawSet, err error) {
+func (svc service) createFirstVersion(ctx context.Context, set *proto.LawSet) (law *proto.LawSet, err error) {
 	if set.Author == nil {
 		return nil, fmt.Errorf("author is nil")
 	}
@@ -232,7 +228,7 @@ func (svc service) createFirstVersion(ctx context.Context, set *apiv1.LawSet) (l
 	return set, nil
 }
 
-func (svc service) createVersion(ctx context.Context, user *apiv1.User, branch string, version uint32, set *apiv1.LawSet) (*apiv1.LawSet, error) {
+func (svc service) createVersion(ctx context.Context, user *proto.User, branch string, version uint32, set *proto.LawSet) (*proto.LawSet, error) {
 	svc.logger.Log("method", "create_version", "user", user, "branch", branch, "version", version, "law", set)
 
 	set.Author.Uid = user.Uid
@@ -286,10 +282,10 @@ func (svc service) createVersion(ctx context.Context, user *apiv1.User, branch s
 	return newVersion, nil
 }
 
-func (svc service) DeleteLaw(ctx context.Context, upstream, ident string, opts *apiv1.DeleteLawOptions) error {
+func (svc service) DeleteLaw(ctx context.Context, upstream, ident string, opts *proto.DeleteLawOptions) error {
 
 	switch {
-	// case opts == apiv1.DeleteLawOptions_BRANCH:
+	// case opts == proto.DeleteLawOptions_BRANCH:
 	// return svc.deleteBranch(upstream, ident, opts.Branch)
 	}
 	return nil
@@ -303,22 +299,21 @@ func (svc service) deleteVersion(ctx context.Context, upstream, ident, branch st
 	return nil
 }
 
-func (svc service) DiffLaws(ctx context.Context, upstream, ident string, opts *apiv1.DiffLawsOptions) (r *apiv1.DiffLawsReply, err error) {
+func (svc service) DiffLaws(ctx context.Context, upstream, ident string, opts *proto.DiffLawsOptions) (r *proto.DiffLawsReply, err error) {
 	switch {
-	//case opts.ReqType == apiv1.DiffLawsOptions_VERSION:
+	//case opts.ReqType == proto.DiffLawsOptions_VERSION:
 	case opts.OurBranch != "" && opts.OurVersion != "" && opts.TheirBranch != "" && opts.TheirVersion != "":
 		return svc.diffVersion(ctx, upstream, ident, opts.OurBranch, opts.TheirBranch, opts.OurVersion, opts.TheirVersion)
 	default:
 		return nil, errs.ErrBadRequest
 	}
-	return
 }
 
 func (svc service) diffBranch(_ context.Context, upstream, ident, branch1, branch2 string) (string, error) {
 	return "", nil
 }
 
-func (svc service) diffVersion(_ context.Context, upstream, ident, ourBranch, theirBranch, ourVersion, theirVersion string) (r *apiv1.DiffLawsReply, err error) {
+func (svc service) diffVersion(_ context.Context, upstream, ident, ourBranch, theirBranch, ourVersion, theirVersion string) (r *proto.DiffLawsReply, err error) {
 	svc.logger.Log("method", "diff_version", "upstream", upstream)
 	ourV, err := svc.db.GetVersion("", upstream, ident, ourBranch, ourVersion)
 	if err != nil {
@@ -332,10 +327,10 @@ func (svc service) diffVersion(_ context.Context, upstream, ident, ourBranch, th
 	if err != nil {
 		return
 	}
-	return &apiv1.DiffLawsReply{Diff: diff, Theirs: theirV}, nil
+	return &proto.DiffLawsReply{Diff: diff, Theirs: theirV}, nil
 }
 
-func (svc service) GetLaw(ctx context.Context, upstream, ident string, opts *apiv1.GetLawOptions) (*apiv1.GetLawReply, error) {
+func (svc service) GetLaw(ctx context.Context, upstream, ident string, opts *proto.GetLawOptions) (*proto.GetLawReply, error) {
 	uid, _ := ctx.Value("user_id").(string)
 	var branch, version string
 	if opts == nil {
@@ -349,10 +344,10 @@ func (svc service) GetLaw(ctx context.Context, upstream, ident string, opts *api
 	if err != nil {
 		return nil, err
 	}
-	return &apiv1.GetLawReply{LawSet: set}, nil
+	return &proto.GetLawReply{LawSet: set}, nil
 }
 
-func (svc service) getVersion(user_id, upstream, ident, branch, version string) (v *apiv1.LawSet, err error) {
+func (svc service) getVersion(user_id, upstream, ident, branch, version string) (v *proto.LawSet, err error) {
 	v, err = svc.db.GetVersion(user_id, upstream, ident, branch, version)
 	if err != nil {
 		return
@@ -365,26 +360,26 @@ func (svc service) getVersion(user_id, upstream, ident, branch, version string) 
 	return
 }
 
-func (svc service) ListLaws(_ context.Context, opts *apiv1.ListLawsOptions) (resp *apiv1.ListLawsReply, err error) {
-	var sets []*apiv1.LawSet
+func (svc service) ListLaws(_ context.Context, opts *proto.ListLawsOptions) (resp *proto.ListLawsReply, err error) {
+	var sets []*proto.LawSet
 	var total int32
 	var suggestions []string
 
 	switch {
-	case opts.ReqType == apiv1.ListLawsOptions_BRANCH_VERSIONS:
+	case opts.ReqType == proto.ListLawsOptions_BRANCH_VERSIONS:
 		versions, err := svc.db.ListBranchVersions(opts.Upstream, opts.Ident, opts.Branch)
 		if err != nil {
 			return nil, err
 		}
 		for _, v := range versions {
-			sets = append(sets, &apiv1.LawSet{Version: v})
+			sets = append(sets, &proto.LawSet{Version: v})
 		}
-	case opts.ReqType == apiv1.ListLawsOptions_LAW_BRANCHES:
+	case opts.ReqType == proto.ListLawsOptions_LAW_BRANCHES:
 		sets, err = svc.db.ListLawBranches(opts.Upstream, opts.Ident)
 		if err != nil {
 			return nil, err
 		}
-	case opts.ReqType == apiv1.ListLawsOptions_SEARCH:
+	case opts.ReqType == proto.ListLawsOptions_SEARCH:
 		sets, total, err = svc.db.FilterUpstreamLaws(opts.Upstream, opts.OrderBy, opts.Desc, opts.PageSize, opts.PageNum, opts.Search)
 		if err != nil {
 			return nil, err
@@ -395,12 +390,12 @@ func (svc service) ListLaws(_ context.Context, opts *apiv1.ListLawsOptions) (res
 			//return nil, err
 			//}
 		}
-	case opts.ReqType == apiv1.ListLawsOptions_UPSTREAM_LAWS:
+	case opts.ReqType == proto.ListLawsOptions_UPSTREAM_LAWS:
 		sets, total, err = svc.db.ListUpstreamLaws(opts.Upstream, opts.OrderBy, opts.Desc, opts.PageSize, opts.PageNum)
 		if err != nil {
 			return nil, err
 		}
-	case opts.ReqType == apiv1.ListLawsOptions_USER_LAWS:
+	case opts.ReqType == proto.ListLawsOptions_USER_LAWS:
 		sets, total, err = svc.db.ListUserLaws(opts.Username, opts.OrderBy, opts.Desc, opts.PageSize, opts.PageNum)
 		if err != nil {
 			return nil, err
@@ -408,11 +403,22 @@ func (svc service) ListLaws(_ context.Context, opts *apiv1.ListLawsOptions) (res
 	default:
 		return nil, errs.ErrBadRequest
 	}
-	return &apiv1.ListLawsReply{LawSets: sets, Total: total, Suggestions: suggestions}, nil
+	return &proto.ListLawsReply{LawSets: sets, Total: total, Suggestions: suggestions}, nil
 }
 
-func (svc service) UpdateLaw(_ context.Context, l *apiv1.LawSet, opts *apiv1.UpdateLawOptions) (err error) {
-	m := &apiv1.Law{
+func (svc service) UpdateLaw(ctx context.Context, l *proto.LawSet, opts *proto.UpdateLawOptions) (err error) {
+	uid, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return errs.ErrUnauthorized
+	}
+	if perm, err := svc.hasPermission(uid, permissions.OpLawUpdate, l); err != nil {
+		return err
+	} else if !perm {
+		return errs.ErrUnauthorized
+	}
+
+	// TODO
+	m := &proto.Law{
 		Upstream:    l.Law.Upstream,
 		Ident:       l.Law.Ident,
 		Description: l.Law.Description,
@@ -424,7 +430,7 @@ func (svc service) UpdateLaw(_ context.Context, l *apiv1.LawSet, opts *apiv1.Upd
 	return
 }
 
-//func (svc service) verifyLaw(l *apiv1.Law) error {
+//func (svc service) verifyLaw(l *proto.Law) error {
 //// check for for existing
 //_, err := svc.db.GetVersionByLatest("", l.Upstream, l.Ident, "master")
 //switch {

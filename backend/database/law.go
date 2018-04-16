@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -9,8 +10,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/google/uuid"
-	apiv1 "github.com/welaw/welaw/api/v1"
 	"github.com/welaw/welaw/pkg/errs"
+	"github.com/welaw/welaw/proto"
 )
 
 const (
@@ -54,7 +55,7 @@ func (db *_database) CreateBranch(tx *sql.Tx, upstream, ident, name, username st
 	return uid, nil
 }
 
-func (db *_database) CreateLaw(tx *sql.Tx, set *apiv1.LawSet) (uuid.UUID, error) {
+func (db *_database) CreateLaw(tx *sql.Tx, set *proto.LawSet) (uuid.UUID, error) {
 	db.logger.Log(
 		"method", "create_law",
 		"short_title", set.Law.ShortTitle,
@@ -118,7 +119,7 @@ func (db *_database) CreateLaw(tx *sql.Tx, set *apiv1.LawSet) (uuid.UUID, error)
 	return uid, nil
 }
 
-func (db *_database) CreateFirstVersion(set *apiv1.LawSet) error {
+func (db *_database) CreateFirstVersion(set *proto.LawSet) error {
 	tx, err := db.conn.Begin()
 	if err != nil {
 		return err
@@ -180,52 +181,7 @@ func (db *_database) CreateFirstVersion(set *apiv1.LawSet) error {
 	return nil
 }
 
-func (db *_database) UpdateVersion(tx *sql.Tx, set *apiv1.LawSet) (*apiv1.LawSet, error) {
-	db.logger.Log("method", "update_version",
-		"uid", set.Version.Uid,
-		"hash", set.Version.Hash,
-	)
-
-	//q := `
-	//UPDATE versions AS v
-	//SET hash = $1,
-	//updated_at = $6
-	//FROM versions
-	//INNER JOIN branches ON branches.uid = versions.branch_id AND branches.deleted_at IS NULL
-	//INNER JOIN laws ON laws.uid = branches.law_id AND laws.deleted_at IS NULL
-	//INNER JOIN upstreams ON upstreams.uid = laws.upstream_id AND upstreams.deleted_at IS NULL
-	//WHERE upstreams.ident = $2
-	//AND laws.ident = $3
-	//AND branches.name = (SELECT uid FROM users WHERE username = $4 AND deleted_at IS NULL)::varchar
-	//AND versions.number = $5
-	//AND versions.deleted_at IS NULL
-	//`
-	q := `
-	UPDATE versions
-	SET hash = $1,
-		updated_at = $3
-	WHERE uid = $2
-	`
-	res, err := tx.Exec(
-		q,
-		set.Version.Hash,
-		set.Version.Uid,
-		time.Now(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-	if rows == 0 {
-		return nil, errs.ErrNotFound
-	}
-	return set, nil
-}
-
-func (db *_database) CreateVersion(tx *sql.Tx, set *apiv1.LawSet) (*apiv1.LawSet, error) {
+func (db *_database) CreateVersion(tx *sql.Tx, set *proto.LawSet) (*proto.LawSet, error) {
 	db.logger.Log("method", "create_version",
 		"upstream", set.Law.Upstream,
 		"ident", set.Law.Ident,
@@ -245,14 +201,11 @@ func (db *_database) CreateVersion(tx *sql.Tx, set *apiv1.LawSet) (*apiv1.LawSet
 		message,
 		published_at,
 		number,
-		tag_1,
-		tag_2,
-		tag_3,
-		tag_4,
+		tags,
 		upstream_group_id
 	) VALUES (
 		(
-			SELECT CASE WHEN $13 = '' THEN (
+			SELECT CASE WHEN $10 = '' THEN (
 				SELECT branches.uid
 				FROM branches
 				INNER JOIN laws ON laws.uid = branches.law_id AND laws.deleted_at IS NULL
@@ -262,7 +215,7 @@ func (db *_database) CreateVersion(tx *sql.Tx, set *apiv1.LawSet) (*apiv1.LawSet
 					AND	laws.ident = $2
 					AND	branches.deleted_at IS NULL
 				)
-			ELSE uuid($13)
+			ELSE uuid($10)
 			END
 		),
 		(SELECT users.uid FROM users WHERE username = $4 AND deleted_at IS NULL),
@@ -283,14 +236,13 @@ func (db *_database) CreateVersion(tx *sql.Tx, set *apiv1.LawSet) (*apiv1.LawSet
 				ORDER BY versions.number DESC
 				LIMIT 1
 			), 0) + 1
-		), $8, $9, $10, $11, (
+		), $8::jsonb, (
 			SELECT upstream_groups.uid
 			FROM upstream_groups
 			INNER JOIN upstreams ON upstreams.uid = upstream_groups.upstream_id AND upstreams.deleted_at IS NULL
 			WHERE upstreams.ident = $1
-				AND upstream_groups.ident = LOWER($12)
+				AND upstream_groups.ident = LOWER($9)
 				AND upstream_groups.deleted_at IS NULL
-				
 		)
 
 	)
@@ -309,6 +261,10 @@ func (db *_database) CreateVersion(tx *sql.Tx, set *apiv1.LawSet) (*apiv1.LawSet
 			return nil, err
 		}
 	}
+	tags, err := json.Marshal(set.Version.Tags)
+	if err != nil {
+		return nil, err
+	}
 	err = tx.QueryRow(
 		q,
 		set.Law.Upstream,
@@ -318,10 +274,7 @@ func (db *_database) CreateVersion(tx *sql.Tx, set *apiv1.LawSet) (*apiv1.LawSet
 		set.Version.Hash,
 		set.Version.Msg,
 		when,
-		set.Version.Tag_1,
-		set.Version.Tag_2,
-		set.Version.Tag_3,
-		set.Version.Tag_4,
+		tags,
 		set.Version.UpstreamGroup,
 		set.Branch.Uid,
 	).Scan(&version, &uid)
@@ -339,12 +292,40 @@ func (db *_database) CreateVersion(tx *sql.Tx, set *apiv1.LawSet) (*apiv1.LawSet
 	return set, nil
 }
 
-func (db *_database) RefreshSearchView(tx *sql.Tx) error {
+func (db *_database) GetLaw(upstream, ident string) (*proto.Law, error) {
+	db.logger.Log("method", "get_law", "upstream", upstream, "ident", ident)
 	q := `
-	REFRESH MATERIALIZED VIEW search_index
-	`
-	_, err := tx.Exec(q)
-	return err
+	SELECT laws.title,
+		laws.short_title,
+		laws.description,
+		laws.user_id,
+		laws.url
+	FROM laws
+	INNER JOIN upstreams ON upstreams.uid = laws.upstream_id
+		AND upstreams.ident = $1
+		AND upstreams.deleted_at IS NULL
+	WHERE laws.ident = $2
+		AND laws.deleted_at IS NULL
+		`
+	//var t time.Time
+	var law *proto.Law
+	err := db.conn.QueryRow(q, upstream, ident).Scan(
+		&law.Title,
+		&law.ShortTitle,
+		&law.Description,
+		&law.UserId,
+		&law.Url,
+		//&t,
+	)
+	if err == sql.ErrNoRows {
+		return nil, errs.ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	//s := int64(t.Unix())
+	//n := int32(t.Nanosecond())
+	//law. = &timestamp.Timestamp{Seconds: s, Nanos: n}
+	return law, nil
 }
 
 func (db *_database) GetUserVersionsCount(username string) (int, error) {
@@ -366,19 +347,7 @@ func (db *_database) GetUserVersionsCount(username string) (int, error) {
 	return c, err
 }
 
-/*
-
-	(
-		SELECT 1
-		FROM votes
-		INNER JOIN users ON votes.user_id = $4
-		WHERE votes.version_id = versions.uid
-		AND users.deleted_at IS NULL
-	)
-
-*/
-
-func (db *_database) GetVersionByLatest(user_id, upstream, ident, branch string) (*apiv1.LawSet, error) {
+func (db *_database) GetVersionByLatest(user_id, upstream, ident, branch string) (*proto.LawSet, error) {
 	db.logger.Log("method", "get_version_by_latest", "user_id", user_id, "upstream", upstream, "ident", ident, "branch", branch)
 	q := `
 	SELECT laws.title,
@@ -396,10 +365,7 @@ func (db *_database) GetVersionByLatest(user_id, upstream, ident, branch string)
 		versions.number,
 		versions.message,
 		versions.published_at,
-		versions.tag_1,
-		versions.tag_2,
-		versions.tag_3,
-		versions.tag_4,
+		versions.tags::jsonb,
 		(
 			SELECT COUNT(votes.value)
 			FROM votes
@@ -417,10 +383,9 @@ func (db *_database) GetVersionByLatest(user_id, upstream, ident, branch string)
 		COALESCE((
 			SELECT TRUE
 			FROM votes
-			INNER JOIN users ON votes.user_id::varchar = $4
+			INNER JOIN users ON votes.user_id::varchar = $4 AND users.deleted_at IS NULL
 			WHERE votes.version_id = versions.uid
 				AND votes.deleted_at IS NULL
-				AND users.deleted_at IS NULL
 			LIMIT 1
 		), FALSE),
 		COALESCE(c.count, 0)
@@ -450,6 +415,7 @@ func (db *_database) GetVersionByLatest(user_id, upstream, ident, branch string)
 	set.Law.Ident = ident
 	set.Branch.Name = branch
 	var t time.Time
+	var tags []byte
 	err := db.conn.QueryRow(q, upstream, ident, branch, user_id).Scan(
 		&set.Law.Title,
 		&set.Law.ShortTitle,
@@ -462,10 +428,8 @@ func (db *_database) GetVersionByLatest(user_id, upstream, ident, branch string)
 		&set.Version.Version,
 		&set.Version.Msg,
 		&t,
-		&set.Version.Tag_1,
-		&set.Version.Tag_2,
-		&set.Version.Tag_3,
-		&set.Version.Tag_4,
+		//&set.Version.Tags,
+		&tags,
 		&set.Version.Yays,
 		&set.Version.Nays,
 		&set.Version.HasVoted,
@@ -476,6 +440,7 @@ func (db *_database) GetVersionByLatest(user_id, upstream, ident, branch string)
 	} else if err != nil {
 		return nil, err
 	}
+	json.Unmarshal(tags, &set.Version.Tags)
 	set.Author.PictureUrl = db.avatarURL(set.Author.Uid)
 	s := int64(t.Unix())
 	n := int32(t.Nanosecond())
@@ -483,7 +448,7 @@ func (db *_database) GetVersionByLatest(user_id, upstream, ident, branch string)
 	return set, nil
 }
 
-func (db *_database) GetVersion(user_id, upstream, ident, branch, version string) (*apiv1.LawSet, error) {
+func (db *_database) GetVersion(user_id, upstream, ident, branch, version string) (*proto.LawSet, error) {
 	if branch == "" {
 		branch = masterLabel
 	}
@@ -500,10 +465,10 @@ func (db *_database) GetVersion(user_id, upstream, ident, branch, version string
 	return db.GetVersionByNumber(user_id, upstream, ident, branch, uint32(num))
 }
 
-func (db *_database) GetVersionByNumber(user_id, upstream, ident, branch string, version uint32) (*apiv1.LawSet, error) {
+func (db *_database) GetVersionByNumber(user_id, upstream, ident, branch string, version uint32) (*proto.LawSet, error) {
 	db.logger.Log(
 		"method", "get_version_by_number",
-		"user_id", upstream,
+		"user_id", user_id,
 		"upstream", upstream,
 		"ident", ident,
 		"branch", branch,
@@ -524,10 +489,7 @@ func (db *_database) GetVersionByNumber(user_id, upstream, ident, branch string,
 		versions.hash,
 		versions.message,
 		versions.published_at,
-		versions.tag_1,
-		versions.tag_2,
-		versions.tag_3,
-		versions.tag_4,
+		versions.tags::jsonb,
 		(
 			SELECT COUNT(votes.value)
 			FROM votes
@@ -578,6 +540,7 @@ func (db *_database) GetVersionByNumber(user_id, upstream, ident, branch string,
 	set.Law.Ident = ident
 	set.Branch.Name = branch
 	set.Version.Version = version
+	var tags []byte
 	err := db.conn.QueryRow(q, upstream, ident, branch, version, user_id).Scan(
 		&set.Law.Title,
 		&set.Law.ShortTitle,
@@ -589,10 +552,7 @@ func (db *_database) GetVersionByNumber(user_id, upstream, ident, branch string,
 		&set.Version.Hash,
 		&set.Version.Msg,
 		&t,
-		&set.Version.Tag_1,
-		&set.Version.Tag_2,
-		&set.Version.Tag_3,
-		&set.Version.Tag_4,
+		&tags,
 		&set.Version.Yays,
 		&set.Version.Nays,
 		&set.Version.HasVoted,
@@ -603,6 +563,7 @@ func (db *_database) GetVersionByNumber(user_id, upstream, ident, branch string,
 	} else if err != nil {
 		return nil, err
 	}
+	json.Unmarshal(tags, &set.Version.Tags)
 	s := int64(t.Unix())
 	n := int32(t.Nanosecond())
 	set.Author.PictureUrl = db.avatarURL(set.Author.Uid)
@@ -610,7 +571,7 @@ func (db *_database) GetVersionByNumber(user_id, upstream, ident, branch string,
 	return set, nil
 }
 
-func (db *_database) ListBranchVersions(upstream, ident, branch string) ([]*apiv1.Version, error) {
+func (db *_database) ListBranchVersions(upstream, ident, branch string) ([]*proto.Version, error) {
 	db.logger.Log("method", "list_branch_versions",
 		"upstream", upstream,
 		"ident", ident,
@@ -619,10 +580,7 @@ func (db *_database) ListBranchVersions(upstream, ident, branch string) ([]*apiv
 	q := `
 	SELECT versions.hash,
 		versions.number,
-		versions.tag_1,
-		versions.tag_2,
-		versions.tag_3,
-		versions.tag_4
+		versions.tags::jsonb
 	FROM versions
 	INNER JOIN branches ON versions.branch_id = branches.uid AND branches.deleted_at IS NULL
 	INNER JOIN laws ON branches.law_id = laws.uid AND laws.deleted_at IS NULL
@@ -638,23 +596,22 @@ func (db *_database) ListBranchVersions(upstream, ident, branch string) ([]*apiv
 		return nil, err
 	}
 	defer rows.Close()
-	var vs []*apiv1.Version
+	var vs []*proto.Version
+	var tags []byte
 	for rows.Next() {
-		v := new(apiv1.Version)
+		v := new(proto.Version)
 		rows.Scan(
 			&v.Hash,
 			&v.Version,
-			&v.Tag_1,
-			&v.Tag_2,
-			&v.Tag_3,
-			&v.Tag_4,
+			&tags,
 		)
+		json.Unmarshal(tags, &v.Tags)
 		vs = append(vs, v)
 	}
 	return vs, nil
 }
 
-func (db *_database) ListUpstreamLaws(upstream, orderBy string, desc bool, pageSize, pageNum int32) (sets []*apiv1.LawSet, total int32, err error) {
+func (db *_database) ListUpstreamLaws(upstream, orderBy string, desc bool, pageSize, pageNum int32) (sets []*proto.LawSet, total int32, err error) {
 	db.logger.Log("method", "list_upstream_laws", "upstream", upstream, "pageSize", pageSize, "pageNum", pageNum)
 	if pageNum < 0 {
 		return nil, 0, fmt.Errorf("bad pageNum: %v", pageNum)
@@ -674,10 +631,7 @@ func (db *_database) ListUpstreamLaws(upstream, orderBy string, desc bool, pageS
 		users.uid,
 		versions.number,
 		versions.published_at,
-		versions.tag_1,
-		versions.tag_2,
-		versions.tag_3,
-		versions.tag_4,
+		versions.tags::jsonb,
 		(
 			SELECT COUNT(votes.value)
 			FROM votes
@@ -746,6 +700,7 @@ func (db *_database) ListUpstreamLaws(upstream, orderBy string, desc bool, pageS
 	}
 	defer rows.Close()
 
+	var tags []byte
 	for rows.Next() {
 		set := makeLawSet()
 		set.Law.Upstream = upstream
@@ -762,10 +717,7 @@ func (db *_database) ListUpstreamLaws(upstream, orderBy string, desc bool, pageS
 			&set.Author.Uid,
 			&set.Version.Version,
 			&t,
-			&set.Version.Tag_1,
-			&set.Version.Tag_2,
-			&set.Version.Tag_3,
-			&set.Version.Tag_4,
+			&tags,
 			&set.Version.Yays,
 			&set.Version.Nays,
 			&set.Version.CommentCount,
@@ -776,6 +728,7 @@ func (db *_database) ListUpstreamLaws(upstream, orderBy string, desc bool, pageS
 		}
 		s := int64(t.Unix())
 		n := int32(t.Nanosecond())
+		json.Unmarshal(tags, &set.Version.Tags)
 		set.Author.PictureUrl = db.avatarURL(set.Author.Uid)
 		set.Version.PublishedAt = &timestamp.Timestamp{Seconds: s, Nanos: n}
 
@@ -785,7 +738,7 @@ func (db *_database) ListUpstreamLaws(upstream, orderBy string, desc bool, pageS
 	return sets, total, err
 }
 
-func (db *_database) FilterUpstreamLaws(upstream, orderBy string, desc bool, pageSize, pageNum int32, search string) (sets []*apiv1.LawSet, total int32, err error) {
+func (db *_database) FilterUpstreamLaws(upstream, orderBy string, desc bool, pageSize, pageNum int32, search string) (sets []*proto.LawSet, total int32, err error) {
 	db.logger.Log("method", "filter_upstream_laws", "upstream", upstream, "orderBy", orderBy, "desc", desc, "pageSize", pageSize, "pageNum", pageNum, "search", search)
 	if pageNum < 0 {
 		return nil, 0, fmt.Errorf("bad pageNum: %v", pageNum)
@@ -805,10 +758,7 @@ func (db *_database) FilterUpstreamLaws(upstream, orderBy string, desc bool, pag
 		users.uid,
 		versions.number,
 		versions.published_at,
-		versions.tag_1,
-		versions.tag_2,
-		versions.tag_3,
-		versions.tag_4,
+		versions.tags,
 		(
 			SELECT COUNT(votes.value)
 			FROM votes
@@ -886,10 +836,7 @@ func (db *_database) FilterUpstreamLaws(upstream, orderBy string, desc bool, pag
 			&set.Author.Uid,
 			&set.Version.Version,
 			&t,
-			&set.Version.Tag_1,
-			&set.Version.Tag_2,
-			&set.Version.Tag_3,
-			&set.Version.Tag_4,
+			&set.Version.Tags,
 			&set.Version.Yays,
 			&set.Version.Nays,
 			&total,
@@ -908,7 +855,7 @@ func (db *_database) FilterUpstreamLaws(upstream, orderBy string, desc bool, pag
 }
 
 // ListLawBranches returns a list of all branches of a law.
-func (db *_database) ListLawBranches(upstream, ident string) ([]*apiv1.LawSet, error) {
+func (db *_database) ListLawBranches(upstream, ident string) ([]*proto.LawSet, error) {
 	db.logger.Log("method", "list_law_branches", "upstream", upstream, "ident", ident)
 	q := `
 	SELECT (
@@ -952,64 +899,20 @@ func (db *_database) ListLawBranches(upstream, ident string) ([]*apiv1.LawSet, e
 		AND	laws.deleted_at IS NULL
 	GROUP BY branches.name
 	`
-	//q := `
-	//SELECT users.username,
-	//SELECT username FROM users WHERE uid::varchar = branches.name AND deleted_at IS NULL
-	//),
-	//MAX(versions.number),
-	//(
-	//SELECT 			COUNT(votes.value)
-	//FROM 			laws
-	//INNER JOIN 		branches ON branches.law_id = laws.uid
-	//INNER JOIN 		versions ON versions.branch_id = branches.uid
-	//FULL JOIN 		votes ON votes.version_id = versions.uid
-	//WHERE			laws.upstream_id = (SELECT uid FROM upstreams WHERE ident = $1)
-	//AND 			laws.ident = $2
-	//AND				laws.deleted_at IS NULL
-	//AND 			branches.deleted_at IS NULL
-	//AND				versions.deleted_at IS NULL
-	//AND 			votes.deleted_at IS NULL
-	//AND 			votes.value = 'YES'
-	//),
-	//(
-	//SELECT 			COUNT(votes.value)
-	//FROM 			laws
-	//INNER JOIN 		branches ON branches.law_id = laws.uid
-	//INNER JOIN 		versions ON versions.branch_id = branches.uid
-	//FULL JOIN 		votes ON votes.version_id = versions.uid
-	//WHERE			laws.upstream_id = (SELECT uid FROM upstreams WHERE ident = $1)
-	//AND 			laws.ident = $2
-	//AND				laws.deleted_at IS NULL
-	//AND 			branches.deleted_at IS NULL
-	//AND				versions.deleted_at IS NULL
-	//AND 			votes.deleted_at IS NULL
-	//AND 			votes.value = 'NO'
-	//)
-	//FROM laws
-	//INNER JOIN branches ON branches.law_id = laws.uid
-	//INNER JOIN versions ON versions.branch_id = branches.uid
-	//FULL JOIN votes ON votes.version_id = versions.uid
-	//WHERE laws.upstream_id = (SELECT uid FROM upstreams WHERE ident = $1)
-	//AND laws.ident = $2
-	//AND	laws.deleted_at IS NULL
-	//AND	versions.deleted_at IS NULL
-	//AND votes.deleted_at IS NULL
-	//GROUP BY branches.name
-	//`
 	rows, err := db.conn.Query(q, upstream, ident)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var sets []*apiv1.LawSet
+	var sets []*proto.LawSet
 	for rows.Next() {
-		set := &apiv1.LawSet{
-			Law: &apiv1.Law{
+		set := &proto.LawSet{
+			Law: &proto.Law{
 				Upstream: upstream,
 			},
-			Branch:  &apiv1.Branch{},
-			Version: &apiv1.Version{},
-			Author:  &apiv1.Author{},
+			Branch:  &proto.Branch{},
+			Version: &proto.Version{},
+			Author:  &proto.Author{},
 		}
 		rows.Scan(
 			&set.Branch.Name,
@@ -1022,7 +925,7 @@ func (db *_database) ListLawBranches(upstream, ident string) ([]*apiv1.LawSet, e
 	return sets, nil
 }
 
-func (db *_database) ListUserLaws(username, orderBy string, desc bool, pageSize, pageNum int32) ([]*apiv1.LawSet, int32, error) {
+func (db *_database) ListUserLaws(username, orderBy string, desc bool, pageSize, pageNum int32) ([]*proto.LawSet, int32, error) {
 	q := `
 	SELECT laws.ident,
 		laws.title,
@@ -1033,10 +936,7 @@ func (db *_database) ListUserLaws(username, orderBy string, desc bool, pageSize,
 		upstreams.ident,
 		versions.number,
 		versions.published_at,
-		versions.tag_1,
-		versions.tag_2,
-		versions.tag_3,
-		versions.tag_4,
+		versions.tags,
 		COUNT(*) OVER() AS total
 	FROM laws
 	INNER JOIN upstreams ON upstreams.uid = laws.upstream_id
@@ -1074,7 +974,7 @@ func (db *_database) ListUserLaws(username, orderBy string, desc bool, pageSize,
 		return nil, 0, err
 	}
 	defer rows.Close()
-	var sets []*apiv1.LawSet
+	var sets []*proto.LawSet
 	var total int32
 	for rows.Next() {
 		set := makeLawSet()
@@ -1089,10 +989,7 @@ func (db *_database) ListUserLaws(username, orderBy string, desc bool, pageSize,
 			&set.Law.Upstream,
 			&set.Version.Version,
 			&t,
-			&set.Version.Tag_1,
-			&set.Version.Tag_2,
-			&set.Version.Tag_3,
-			&set.Version.Tag_4,
+			&set.Version.Tags,
 			&total,
 		)
 		s := int64(t.Unix())
@@ -1105,16 +1002,55 @@ func (db *_database) ListUserLaws(username, orderBy string, desc bool, pageSize,
 	return sets, total, nil
 }
 
-func (db *_database) UpdateLaw(lm *apiv1.Law) (err error) {
+func (db *_database) UpdateLaw(lm *proto.Law) (err error) {
 	return
 }
 
-func makeLawSet() *apiv1.LawSet {
-	return &apiv1.LawSet{
-		Law:     &apiv1.Law{},
-		Branch:  &apiv1.Branch{},
-		Version: &apiv1.Version{},
-		Author:  &apiv1.Author{},
+func (db *_database) UpdateVersion(tx *sql.Tx, set *proto.LawSet) (*proto.LawSet, error) {
+	db.logger.Log("method", "update_version",
+		"uid", set.Version.Uid,
+		"hash", set.Version.Hash,
+	)
+
+	q := `
+	UPDATE versions
+	SET hash = $1,
+		updated_at = $3
+	WHERE uid = $2
+		AND deleted_at IS NULL
+	`
+	res, err := tx.Exec(
+		q,
+		set.Version.Hash,
+		set.Version.Uid,
+		time.Now(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if rows == 0 {
+		return nil, errs.ErrNotFound
+	}
+	return set, nil
+}
+
+func (db *_database) RefreshSearchView(tx *sql.Tx) error {
+	q := `
+	REFRESH MATERIALIZED VIEW search_index
+	`
+	_, err := tx.Exec(q)
+	return err
+}
+func makeLawSet() *proto.LawSet {
+	return &proto.LawSet{
+		Law:     &proto.Law{},
+		Branch:  &proto.Branch{},
+		Version: &proto.Version{},
+		Author:  &proto.Author{},
 	}
 }
 

@@ -7,8 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
-	"github.com/welaw/welaw/pkg/errs"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/amazon"
 	"golang.org/x/oauth2/google"
@@ -16,7 +14,6 @@ import (
 )
 
 const (
-	// google
 	ProviderGoogle    = "google"
 	GoogleURL         = "https://www.googleapis.com/oauth2/v2/userinfo?access_token=%s"
 	ProviderAmazon    = "amazon"
@@ -25,9 +22,17 @@ const (
 	MicrosoftURL      = "https://apis.live.net/v5.0/me?access_token=%s"
 )
 
+type UserInfo struct {
+	Name       string
+	Email      string
+	ProviderId string
+	PictureUrl string
+}
+
 type Provider interface {
 	GetLoginURL(state string) (url string)
-	LoginUser(state, code string) (*apiv1.User, error)
+	// TODO
+	LoginUser(state, code string) (*UserInfo, error)
 }
 
 type provider struct {
@@ -99,7 +104,7 @@ func (p *provider) GetLoginURL(state string) string {
 	return p.oauthConfig.AuthCodeURL(state)
 }
 
-func (p *provider) LoginUser(state, code string) (*apiv1.User, error) {
+func (p *provider) LoginUser(state, code string) (*UserInfo, error) {
 	token, err := p.oauthConfig.Exchange(context.Background(), code)
 	if err != nil {
 		return nil, err
@@ -117,7 +122,7 @@ func (p *provider) LoginUser(state, code string) (*apiv1.User, error) {
 	case ProviderGoogle:
 		var r GoogleResponse
 		err = json.Unmarshal(contents, &r)
-		return &apiv1.User{
+		return &UserInfo{
 			ProviderId: r.ID,
 			Name:       r.Name,
 			Email:      r.Email,
@@ -126,7 +131,7 @@ func (p *provider) LoginUser(state, code string) (*apiv1.User, error) {
 	case ProviderAmazon:
 		var r AmazonResponse
 		err = json.Unmarshal(contents, &r)
-		return &apiv1.User{
+		return &UserInfo{
 			ProviderId: r.UserID,
 			Name:       r.Name,
 			Email:      r.Email,
@@ -134,14 +139,14 @@ func (p *provider) LoginUser(state, code string) (*apiv1.User, error) {
 	case ProviderMicrosoft:
 		var r MicrosoftResponse
 		err = json.Unmarshal(contents, &r)
-		return &apiv1.User{
+		return &UserInfo{
 			ProviderId: r.ID,
 			Name:       r.Name,
 			Email:      r.Emails["account"],
 		}, nil
 
 	default:
-		return nil, errs.ErrBadRequest
+		return nil, fmt.Errorf("provider not found")
 	}
 }
 

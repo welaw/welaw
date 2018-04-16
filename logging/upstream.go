@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	apiv1 "github.com/welaw/welaw/api/v1"
+	"github.com/welaw/welaw/proto"
 )
 
-func (mw loggingMiddleware) CreateUpstream(ctx context.Context, u *apiv1.Upstream) (err error) {
+func (mw loggingMiddleware) CreateUpstream(ctx context.Context, u *proto.Upstream) (err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "create_upstream",
@@ -21,7 +21,7 @@ func (mw loggingMiddleware) CreateUpstream(ctx context.Context, u *apiv1.Upstrea
 	return
 }
 
-func (mw loggingMiddleware) GetUpstream(ctx context.Context, ident string) (u *apiv1.Upstream, err error) {
+func (mw loggingMiddleware) GetUpstream(ctx context.Context, ident string) (u *proto.Upstream, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "get_upstream",
@@ -35,7 +35,7 @@ func (mw loggingMiddleware) GetUpstream(ctx context.Context, ident string) (u *a
 	return
 }
 
-func (mw loggingMiddleware) ListUpstreams(ctx context.Context) (upstreams []*apiv1.Upstream, err error) {
+func (mw loggingMiddleware) ListUpstreams(ctx context.Context) (upstreams []*proto.Upstream, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "list_upstreams",
@@ -48,7 +48,7 @@ func (mw loggingMiddleware) ListUpstreams(ctx context.Context) (upstreams []*api
 	return
 }
 
-func (mw loggingMiddleware) UpdateUpstream(ctx context.Context, u *apiv1.Upstream) (err error) {
+func (mw loggingMiddleware) UpdateUpstream(ctx context.Context, u *proto.Upstream) (err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "update",
